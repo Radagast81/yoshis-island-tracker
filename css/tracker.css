@@ -1,0 +1,168 @@
+body { 
+	font-family: Arial, Helvetica, sans-serif; 
+	font-size: 14px; 
+}
+
+label { 
+	display: inline-block; 
+}
+
+div { 
+	margin: 3px 0; 
+}
+
+figure {
+  padding: 3px;
+  margin: auto;
+  display: inline-block; 
+}
+
+figcaption {
+  color: black;
+  font-style: italic;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 2px;
+}
+.trackingArea {
+   display: table;
+}
+.cell {
+   display: inline-block;
+}
+.col {
+   display: inline-block;
+   margin: 0px;
+}
+.collectable.isNeeded {
+	background-color: darkred;
+}
+.collectable.isNeeded.isCollected {
+	background-color: darkgreen;
+}
+.collectable.isNeeded.hasSubstitute {
+	background-color: #8b8000;
+}
+.worldGoals.image {
+   display: block;
+   margin-top: 1px;
+}
+.worldGoals.image.blocked {
+   opacity: 0.2;
+}
+.worldGoals.cell {
+   margin-left: -2px;
+   margin-bottom: 0px;
+   margin-right: 2px;
+}
+
+.worldIcon.castle {
+	background-repeat: no-repeat;
+	background-size: 64px 70px;
+	background-position: left 0px top 1px;
+}
+.worldIconImage {
+   position: relative;
+   margin-top: 13px;
+   margin-left: -1px;
+}
+.worldIconImage.castle {
+	margin-left: 6px;
+	margin-right: 6px;
+}
+.world-1 {
+	background-color: #e0f8a0;
+}
+.world-2 {
+	background-color: #a3e7f0;
+}
+.world-3 {
+	background-color: #f2c7de;
+}
+.world-4 {
+	background-color: #d7c0e0;
+}
+.world-5 {
+	background-color: #b7c6de;
+}
+.world-6 {
+	background-color: #e9afb3;
+}
+.infoBox {
+	color: white;
+}
+div.infoBox {
+	white-space: pre;
+    font-weight: normal;
+}
+label {
+	color: white;
+}
+label.infoBox {
+  font-weight: bold;
+}
+.collectable-substitute {
+	position: absolute;
+	display: none;
+	left: 2px;
+	bottom: 6px;
+	z-index:1;
+}
+.collectable-substitute.hasSubstitute {
+	display: block;
+}
+.worldGoals {
+	position: relative;
+}
+.row.world {
+	padding-right:2px;
+}
+.collectable {
+	position: relative;
+}
+.worldgoal-substitute {
+	position: absolute;
+	display: none;
+	left: 8px;
+	bottom: -4px;
+	z-index:1;
+}
+.worldgoal-substitute.hasSubstitute {
+	display: block;
+}
+.worldgoal-lenseNeeded {
+	position: absolute;
+	display: none;
+	left: 8px;
+	top: -1px;
+	z-index:1;
+}
+.worldgoal-lenseNeeded.isNeeded {
+	display: block;
+}
+.worldgoal-hardMode {
+	position: absolute;
+	display: none;
+	left: 0px;
+	top: -1px;
+	z-index:1;
+}
+.worldgoal-hardMode.show {
+	display: block;
+}
+.app {
+	display:table;
+	margin: 0px;
+	padding: 0px;
+}
+div {
+	position: relative;
+}
+select {
+	display: table;
+}
+button {
+	position: absolute;
+	right: 0px;
+	bottom: 0px;
+}

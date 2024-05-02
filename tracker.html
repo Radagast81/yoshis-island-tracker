@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Yoshi's Island Tracker</title>
+		<script type = "text/javascript" src="js/logic.js?v=1"></script>
+		<script type = "text/javascript" src="js/rules.js?v=1"></script>
+		<script type = "text/javascript" src="js/tracker.js?v=1"></script>
+		<link rel="stylesheet" type="text/css" href="css/tracker.css?v=3">
+		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="0" />
+	</head>
+	<body style="background-color: black;" onLoad="initTrackerHTML()">
+		<div id="app" class="row app">
+			<div id="optionsoverlay">
+				<label class="dropdown">
+			      Difficulty:
+				  <select name="difficulty_dropdown" id="difficulty_dropdown" onchange="onDifficultyChanged()">
+					<option value="0">Easy</option>
+					<option value="1">Normal</option>
+					<option value="2">Hard</option>
+				  </select>
+				</label>
+				<label class="dropdown">
+			      Bowser Castle Route:
+				  <select name="bc_route_dropdown" id="bc_route_dropdown" onchange="onBowserCastleRouteChanged()">
+					<option value="Door Selectable">Selectable Door</option>
+					<option value="Door1">Fixed Door 1</option>
+					<option value="Door2">Fixed Door 2</option>
+					<option value="Door3">Fixed Door 3</option>
+					<option value="Door4">Fixed Door 4</option>
+					<option value="Gaunlet">Gaunlet (All Doors)</option>
+				  </select>
+				</label>
+				<input type="checkbox" id="chkShowHardMode" name="chkShowHardMode" onchange="onShowHardModeChanged()">
+				<label for="chkShowHardMode">Show if goal can be beaten in harder difficulty</label>
+				<button id="btnResetLayout" onclick="resetCollectableList()">Reset Layout</button>
+			</div>
+			<div id="trackingoverlay" class="trackingArea"></div>
+		    <div id="worldoverlay" class="trackingArea"></div>
+			<label class="infoBox">
+			  Logic:
+		      <div id="infooverlay" class="trackingArea infoBox">
+			  </div>
+			</label>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+	"module": "preserve",
+	"lib": ["es2021","dom"],
+	"outDir": "js",
+    "noImplicitAny": true,
+    "removeComments": true,
+    "sourceMap": false,
+	"downlevelIteration": true
+  },
+  "include": ["src/**/*"]
+}
