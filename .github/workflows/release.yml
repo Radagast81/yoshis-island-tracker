@@ -27,8 +27,9 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    matrix:
-       node-version: [20.x]
+    strategy:
+      matrix:
+         node-version: [20.x]
     steps:
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
