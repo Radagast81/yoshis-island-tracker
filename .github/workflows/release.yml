@@ -23,7 +23,7 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run build --if-present
-      - run: zip -r yoshis-island-tracker.zip *.html *.css *.js *.png
+      - run: zip -r yoshis-island-tracker.zip *.html ja css images
       - name: Create release
         id: create_release
         uses: actions/create-release@latest
