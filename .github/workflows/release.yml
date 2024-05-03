@@ -10,6 +10,7 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions: write-all
     strategy:
       matrix:
          node-version: [20.x]
