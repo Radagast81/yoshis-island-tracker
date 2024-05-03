@@ -25,15 +25,14 @@ jobs:
   # build-release-windows: # this is done by hand because of signing
   # build-release-macos: # LF volunteer
 
-  build-release:
+  build:
     runs-on: ubuntu-latest
+    matrix:
+       node-version: [20.x]
     steps:
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-    matrix:
-       node-version: [20.x]
       # - code below copied from build.yml -
-      strategy:
       - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
