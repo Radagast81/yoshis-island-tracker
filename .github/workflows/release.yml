@@ -21,8 +21,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      - run: npm ci
       - run: npm install typescript -g
+      - run: npm ci
       - run: npm run build --if-present
       - run: zip -r yoshis-island-tracker.zip *.html ja css images
       - name: Create release
