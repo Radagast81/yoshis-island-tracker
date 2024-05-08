@@ -5,6 +5,7 @@ body {
 
 label { 
 	display: inline-block; 
+	color: white;
 }
 
 div { 
@@ -90,16 +91,26 @@ figcaption {
 }
 .infoBox {
 	color: white;
+	margin: 0px;
+	padding: 0px;
 }
 div.infoBox {
-	white-space: pre;
     font-weight: normal;
+	display: table;
+	width: 100%;
 }
-label {
-	color: white;
+div.infoBox .row {
+	position: relative;
+	margin-top: 2px;
+	width: 100%;
 }
-label.infoBox {
-  font-weight: bold;
+div.infoBoxText.status {
+	position: absolute;
+	right: 0px;
+	bottom: 0px;
+}
+label.infoBoxLabel {
+    font-weight: bold;
 }
 .collectable-substitute {
 	position: absolute;

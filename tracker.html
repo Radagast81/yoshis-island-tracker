@@ -2,6 +2,8 @@
 <html>
 	<head>
 		<title>Yoshi's Island Tracker</title>
+		<script type = "text/javascript" src="js/sniClient.js?v=1"></script>
+		<script type = "text/javascript" src="js/autotracker.js?v=1"></script>
 		<script type = "text/javascript" src="js/logic.js?v=1"></script>
 		<script type = "text/javascript" src="js/rules.js?v=1"></script>
 		<script type = "text/javascript" src="js/tracker.js?v=1"></script>
@@ -33,16 +35,19 @@
 				  </select>
 				</label>
 				<input type="checkbox" id="chkShowHardMode" name="chkShowHardMode" onchange="onShowHardModeChanged()">
-				<label for="chkShowHardMode">Show if goal can be beaten in harder difficulty</label>
+				<label for="chkShowHardMode">Show harder difficulty beatability</label>
 				<button id="btnResetLayout" onclick="resetCollectableList()">Reset Layout</button>
 			</div>
 			<div id="trackingoverlay" class="trackingArea"></div>
 		    <div id="worldoverlay" class="trackingArea"></div>
-			<label class="infoBox">
-			  Logic:
-		      <div id="infooverlay" class="trackingArea infoBox">
+			<div class="infoBox">
+			  <div class="row infoBox"> 
+			    <label class="infoBoxLabel">Logic:</label>
+				<div id="connectionStatus" class="infoBoxText status"></div>
 			  </div>
-			</label>
+		      <div id="infooverlay" class="trackingArea infoBoxText">
+			  </div>
+			</div>
 		</div>
 	</body>
 </html>

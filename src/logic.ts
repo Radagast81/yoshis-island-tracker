@@ -105,7 +105,16 @@ class WorldGoal {
   readonly level: WorldLevel;
   readonly goalType: WorldGoalTypes;
   rules: (() => boolean)[];
+  private dataChangeListener: {(goal: WorldGoal): void }[] = [];
   private completed: boolean = false;
+  
+  addDataChangeListener(listener: {(goal: WorldGoal): void }): number {
+    return this.dataChangeListener.push(listener) - 1;
+  }
+  
+  removeDataChangeListener(index: number) : void {
+    this.dataChangeListener[index] = null;
+  }
   
   constructor(level: WorldLevel, goalType: WorldGoalTypes) {
     this.level = level;
@@ -118,7 +127,10 @@ class WorldGoal {
     return this.completed;
   }
   setCompleted(completed: boolean): void {
+    let changed: boolean = (completed!==this.completed);
     this.completed = completed;
+	if(changed)
+	  this.dataChangeListener.filter(listener=>listener).forEach(listener=>listener(this));
   }
   
   getRules(evalState: EvaluationState) : Map<string, () => boolean> {
@@ -171,9 +183,10 @@ class Boss {
 
 class Collectable {
   readonly collectableType: CollectableTypes;
-  value: boolean|number;
+  private value: boolean|number;
   readonly minValue? : number;
   readonly maxValue? : number;
+  private dataChangeListener: {(collectable: Collectable): void }[] = [];
   
   constructor(collectableType: CollectableTypes, minValue? : number, maxValue? : number) {
     this.collectableType = collectableType;
@@ -184,14 +197,34 @@ class Collectable {
 	else 
 	  this.value = false;
   }
+  
+  addDataChangeListener(listener: {(collectable: Collectable): void }): number {
+    return this.dataChangeListener.push(listener) - 1;
+  }
+  
+  removeDataChangeListener(index: number) : void {
+    this.dataChangeListener[index] = null;
+  }
+  
+  setValue(value: boolean|number) {
+    let changed: boolean = (value!==this.value);
+    this.value = value;
+	if(changed)
+	  this.dataChangeListener.filter(listener=>listener).forEach(listener=>listener(this));
+  }
+  getValue(): boolean|number {
+    return this.value;
+  }
   toggle(): void {
+    let value = this.value;
     if(this.maxValue) {
-	  (<number>this.value)++;
-	  if(<number>this.value>this.maxValue)
-	    this.value = this.minValue;
+	  (<number>value)++;
+	  if(<number>value>this.maxValue)
+	    value = this.minValue;
 	} else {
-	  this.value = !(<boolean>this.value);
+	  value = !(<boolean>value);
 	}
+	this.setValue(value);
   }
 }
 

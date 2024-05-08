@@ -25,6 +25,7 @@ abstract class WorldGoal {
   abstract setCompleted(completed: boolean): void;
   abstract getRulesAsStrings(evalState: EvaluationState): Map<string, string>;
   abstract evaluateRules(evalState: EvaluationState) : boolean;
+  abstract addDataChangeListener(listener: {(goal: WorldGoal): void }): number;
   
   // addtional layout information:
   htmlImage: HTMLImageElement;
@@ -38,11 +39,12 @@ abstract class Boss {
 abstract class Collectable {
   // included from logic.ts:
   readonly collectableType: CollectableTypes;
-  value: boolean|number;
   readonly minValue? : number;
   readonly maxValue? : number;
   
   abstract toggle() : void;
+  abstract getValue(): boolean|number;
+  abstract addDataChangeListener(listener: {(collectable: Collectable): void }): number;
   
   // addtional layout information:
   htmlImage: HTMLImageElement;
@@ -54,6 +56,10 @@ abstract class State {
   readonly collectables: Map<CollectableTypes, Collectable> = new Map<CollectableTypes, Collectable>();
   abstract getGoal(world: number, level: number, goaltype: WorldGoalTypes) : WorldGoal;
 }
+abstract class Autotracker {
+  abstract addConnectionStatusListener(listener: {(connectionStatus: string): void }): number;
+}
+
 var state : State;
 
 function getWorldGoalId(world:number, level: number, goaltype: WorldGoalTypes) : string {
@@ -67,6 +73,8 @@ var bowserCastleRouteStorage = "YoshisIslandTrackerBowserCastleRoute";
 var showHardModeStorage = "YoshisIslandTrackerShowHardMode";
 var optionDifficulty: number;
 var optionShowHardMode: boolean;
+var createAutotracker: {(): Autotracker };
+var autotracker: Autotracker;
 { 
     collectableList = loadOrderFromLocalStorage(collectableList, collectableListStorage);
 	if(!window.localStorage.getItem(difficultyStorage))
@@ -75,7 +83,7 @@ var optionShowHardMode: boolean;
 	if(!window.localStorage.getItem(bowserCastleRouteStorage))
 	  window.localStorage.setItem(bowserCastleRouteStorage, BowserCastleRouteTypes.DoorSelect);
 	window.optionBowserCastleRoute = <BowserCastleRouteTypes>window.localStorage.getItem(bowserCastleRouteStorage);
-	optionShowHardMode = window.localStorage.getItem(showHardModeStorage) === "true"
+	optionShowHardMode = window.localStorage.getItem(showHardModeStorage) === "true";
 }
 
 var isGoalRequirementsHighlighted = false;
@@ -117,7 +125,7 @@ function saveOrderToLocalStorage<Type>(array: Type[], key: string): void {
 
 function getCollectableImageURL(collectable: Collectable) : string {
 	let result : string =  "images/collectables/" + collectable.collectableType;
-	let value : number|boolean = collectable.value;
+	let value : number|boolean = collectable.getValue();
 	if(typeof value === "boolean") {
 		if(!<boolean>value) {
 		  result += "_unchecked";
@@ -130,7 +138,7 @@ function getCollectableImageURL(collectable: Collectable) : string {
 
 function checkForConsumable(goal: WorldGoal, target: CollectableTypes, difficulty: number): boolean {
 	let canBeSubstitutedByConsumable = goal.evaluateRules({
-	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value])),
+	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
 	  difficulty: difficulty,
 	  consumableEgg: target===CollectableTypes.Egg,
 	  consumableWatermelon: target===CollectableTypes.Watermelon,
@@ -156,7 +164,7 @@ function updateWorldGoalState(goal: WorldGoal) {
 	goal.htmlImage.src = imgPath + goal.goalType + "_unchecked.png";
     
 	let isBeatable = goal.evaluateRules({
-	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value])),
+	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
 	  difficulty: optionDifficulty,
 	  consumableEgg: false,
 	  consumableWatermelon: false,
@@ -176,7 +184,7 @@ function updateWorldGoalState(goal: WorldGoal) {
 	goal.htmlImage.classList.toggle("blocked", blocked);
 	if(!blocked&&optionDifficulty==0) {
 	  goal.htmlImageLenseNeeded.classList.toggle("isNeeded",!goal.evaluateRules({
-		  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value])),
+		  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
 		  difficulty: optionDifficulty,
 		  consumableEgg: true,
 		  consumableWatermelon: true,
@@ -185,7 +193,7 @@ function updateWorldGoalState(goal: WorldGoal) {
 	}
 	if(optionShowHardMode&&!isBeatable&&optionDifficulty<2) {
 	  isBeatable = goal.evaluateRules({
-		collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value])),
+		collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
 		difficulty: optionDifficulty+1,
 		consumableEgg: false,
 		consumableWatermelon: false,
@@ -216,6 +224,8 @@ function initTrackerHTML() : void {
   setupWorldsInHTML();
   setupMenuInHTML();
   resetLogicInfobox();
+  autotracker = createAutotracker();
+  autotracker.addConnectionStatusListener(updateSniConnectionStatus);
 }
 
 function setupMenuInHTML() : void {
@@ -266,6 +276,7 @@ function setupCollectablesInHTML() : void {
 	  width: 24,
 	  height: 24
 	});
+	collectable.addDataChangeListener((col)=>updateCollectable(col));
 	cellElement.append(collectable.htmlImage,collectable.htmlImageSubstitute);
 	rowElement.appendChild(cellElement);
   }
@@ -356,6 +367,7 @@ function setupWorldsInHTML() : void {
 			onclick: (e:Event) => toggleWorldGoalCompleted(goal)
 		  });
           updateWorldGoalState(goal);
+		  goal.addDataChangeListener((goal)=> updateWorldGoalState(goal));
 		  goalsCell.append(goal.htmlImage, goal.htmlImageSubstitute,goal.htmlImageLenseNeeded,goal.htmlImageBeatableWithHarderDifficulty);
 	      goalsCol.appendChild(goalsCell);
 		}
@@ -364,18 +376,18 @@ function setupWorldsInHTML() : void {
 }
 function toggleCollectable(collectable: Collectable) : void {
     collectable.toggle();
+	updateCollectable(collectable);
+}
+function updateCollectable(collectable: Collectable) : void {
 	collectable.htmlImage.setAttribute("src", getCollectableImageURL(collectable));
 	updateAllWorldGoals();
 }
+
 function toggleWorldGoalCompleted(goal: WorldGoal) : void {
   goal.setCompleted(!goal.isCompleted());
-  updateWorldGoalState(goal);
 }
 function toggleAllWorldGoalCompleted(worldLevel: WorldLevel) : void {
   worldLevel.toggleGoalsCompleted();
-  for(let goal of worldLevel.goals) {
-    updateWorldGoalState(goal);
-  }
 }
 function dragStartCollectable(event: DragEvent, collectable: CollectableTypes) {
   event.dataTransfer.setData("text/plain", collectable);
@@ -411,7 +423,7 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
   let displayText = "";
   let combinedFuncText = "";
   for(let [key, funcString] of goal.getRulesAsStrings({
-	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value])),
+	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
 	  difficulty: optionDifficulty,
 	  consumableEgg: false,
 	  consumableWatermelon: false,
@@ -440,14 +452,14 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
 		  isCollected = true;
 		  let matches = combinedFuncText.matchAll(/.*hasEggs\(\s*(\d+)\s*(\)|,).*/g);
 		  for(let match of matches) {
-		    if(parseInt(match[1]) > <number>collectable.value) {
+		    if(parseInt(match[1]) > <number>collectable.getValue()) {
 			  isCollected = false;
 			  break;
 			}
 		  }
 		} else {
 		  isNeeded = combinedFuncText.indexOf("\""+collectable.collectableType+"\"") > 0;
-		  isCollected = <boolean>collectable.value;
+		  isCollected = <boolean>collectable.getValue();
 		}
 		if(isNeeded&&!isCollected) {
 		  let consumableParse = combinedFuncText.match((collectable.collectableType === CollectableTypes.Egg?".*hasEggs\\(\\s*\\d+":".*\""+collectable.collectableType+"\"")+"\\s*,\\s*consumable(Egg|Watermelon).*");
@@ -461,7 +473,7 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
         collectable.htmlImage.classList.toggle("hasSubstitute", isNeeded&&!isCollected&&goal.evaluateRules(
 		    //Evaluate rule with all items set to max but the one beeing testet remaining at current state
 		    {collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map((
-				[key, c])=>[key, key==collectable.collectableType?c.value:c.maxValue?c.maxValue:true])),
+				[key, c])=>[key, key==collectable.collectableType?c.getValue():c.maxValue?c.maxValue:true])),
 			  difficulty: optionDifficulty,
 			  consumableEgg: false,
 			  consumableWatermelon: false,
@@ -529,4 +541,9 @@ function onShowHardModeChanged(): void {
   optionShowHardMode = checkBoxShowHardMode.checked;
   window.localStorage.setItem(showHardModeStorage,optionShowHardMode.toString());
   updateAllWorldGoals();
+}
+function updateSniConnectionStatus(message: string):void {
+  let statusElement = document.getElementById("connectionStatus");
+  if(statusElement)
+    statusElement.textContent = "Autotracking Status: "+message;
 }
