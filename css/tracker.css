@@ -18,12 +18,13 @@ figure {
   display: inline-block; 
 }
 
-figcaption {
+a {
   color: black;
   font-style: italic;
   font-weight: bold;
   text-align: center;
   margin-top: 2px;
+  display: block;
 }
 .trackingArea {
    display: table;
@@ -172,8 +173,46 @@ div {
 select {
 	display: table;
 }
+input.textField {
+	display: table;
+}
+
 button {
 	position: absolute;
 	right: 0px;
 	bottom: 0px;
+}
+a {
+	z-index:1;
+}
+.isNotOpen figure {
+	display: none;
+}
+.isNotOpen div.worldGoals {
+	display: none;
+}
+div.worldLabel {
+	color: black;
+	margin: 2px;
+	font-weight: bold;
+}
+.isOpen div.worldLabel {
+	display: none;
+}
+.worldFinishedImage {
+	display: none;
+	position: absolute;
+	right:0px;
+	bottom:10px;
+	z-index:1;
+}
+figure.worldIcon {
+	position: relative;
+}
+
+figure.worldIcon.isFinished .worldFinishedImage {
+	display: block;
+}
+figure.worldIcon.noOpenGoals{
+   opacity: 0.2;
 }

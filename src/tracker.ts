@@ -15,6 +15,8 @@ abstract class WorldLevel {
   abstract isBowserLevel() : boolean;
   abstract toggleGoalsCompleted() : void;
   abstract switchBossWithLevel(other: WorldLevel): void;
+  
+  htmlElement: HTMLElement;
 }
 abstract class WorldGoal {
   // included from logic.ts:
@@ -52,12 +54,16 @@ abstract class Collectable {
 }
 abstract class State {
   readonly worldLevels: Map<string, WorldLevel>;
-  readonly worldGoals: Map<string, WorldGoal> = new Map<string, WorldGoal>();
-  readonly collectables: Map<CollectableTypes, Collectable> = new Map<CollectableTypes, Collectable>();
+  readonly worldGoals: Map<string, WorldGoal>;
+  readonly collectables: Map<CollectableTypes, Collectable>;
+  readonly worldOpen: Map<number, boolean>;
   abstract getGoal(world: number, level: number, goaltype: WorldGoalTypes) : WorldGoal;
+  abstract addWorldOpenChangeListener(listener: {(world: number, isOpen: boolean): void }): number;
+  abstract toggleWorldOpen(world:number):void;
 }
 abstract class Autotracker {
   abstract addConnectionStatusListener(listener: {(connectionStatus: string): void }): number;
+  abstract setPort(port: number): void;
 }
 
 var state : State;
@@ -151,6 +157,20 @@ function checkForConsumable(goal: WorldGoal, target: CollectableTypes, difficult
 	return canBeSubstitutedByConsumable;
 }
 
+function updateLevelState(level: WorldLevel) {
+  let isLevelFinished: boolean = true;
+  let isGoalOpen: boolean = false;
+  for(let goal of level.goals) {
+    if(!goal.isCompleted()) {
+	  isLevelFinished = false;
+	  if(goal.htmlImage&&!goal.htmlImage.classList.contains("blocked"))
+	    isGoalOpen = true;
+	}
+  }
+  level.htmlElement.classList.toggle("isFinished", isLevelFinished);
+  level.htmlElement.classList.toggle("noOpenGoals", !isLevelFinished&&!isGoalOpen);
+}
+
 function updateWorldGoalState(goal: WorldGoal) {
   goal.htmlImageSubstitute.classList.remove("hasSubstitute");
   goal.htmlImageLenseNeeded.classList.remove("isNeeded");
@@ -211,6 +231,7 @@ function updateWorldGoalState(goal: WorldGoal) {
 	  goal.htmlImageBeatableWithHarderDifficulty.classList.toggle("show", !blocked);
 	}
   }
+  updateLevelState(goal.level);
 }
 
 function performOnAllCollectables(func: (collectable: Collectable) => void) {
@@ -226,6 +247,7 @@ function initTrackerHTML() : void {
   resetLogicInfobox();
   autotracker = createAutotracker();
   autotracker.addConnectionStatusListener(updateSniConnectionStatus);
+  onPortChanged();
 }
 
 function setupMenuInHTML() : void {
@@ -291,16 +313,28 @@ function setupWorldsInHTML() : void {
       if(w!=world.world) {
 	    w = world.world;
 	    rowElement = Object.assign(document.createElement("div"), {
-	      className: "row world world-"+world.world
+	      className: "row world world-"+world.world,
+		  id: "world-"+world.world
 	    });
+		notifyWorldIsOpenChanged(rowElement, world.world, state.worldOpen.get(world.world));
 		worldNode.appendChild(rowElement);
+		let rowLabel = Object.assign(document.createElement("div"), {
+		  textContent: "World - "+world.world,
+		  className: "worldLabel",
+		  ondblclick: (e:Event) => toggleWorldOpenState(world.world)
+		});
+		rowElement.appendChild(rowLabel);
       }
 	    // Worlds
 		let worldLabeledIcon = Object.assign(document.createElement("figure"), {
-		  className: "worldIcon"
+		  className: "worldIcon",
+		  ondblclick: (e:Event) => toggleWorldOpenState(world.world)
 		});
-		let worldLabel = Object.assign(document.createElement("figcaption"), {
-		  textContent: worldId
+		world.htmlElement = worldLabeledIcon;
+		let worldLabel = Object.assign(document.createElement("a"), {
+		  href: "https://www.mariouniverse.com/wp-content/img/maps/snes/yi/"+world.world+"-"+(world.level<9?world.level:"ex")+".png",
+		  target: "_blank",
+		  textContent: worldId,
 		});
 		let worldImage = Object.assign(document.createElement("img"), {
 		  src: "images/worlds/" + worldId + ".png",
@@ -308,6 +342,13 @@ function setupWorldsInHTML() : void {
 		  className: "worldIconImage",
 		  width: 48,
 		  height: 48,
+		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world)
+		});
+		let worldImageFinish = Object.assign(document.createElement("img"), {
+		  src: "images/states/Medal.png",
+		  id: "world-"+worldId+"-finish",
+		  className: "worldFinishedImage",
+		  width: 17,
 		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world)
 		});
 		if(world.isBossLevel()) {
@@ -325,7 +366,7 @@ function setupWorldsInHTML() : void {
 			});
 		  }
 		}
-		worldLabeledIcon.append(worldImage,worldLabel);
+		worldLabeledIcon.append(worldImage,worldLabel,worldImageFinish);
 		
 		// Goals
 		let goalsCol = Object.assign(document.createElement("div"), {
@@ -373,6 +414,7 @@ function setupWorldsInHTML() : void {
 		}
 	    rowElement.append(worldLabeledIcon, goalsCol);
   }
+  state.addWorldOpenChangeListener((world, isOpen)=> notifyWorldIsOpenChanged(null, world, isOpen));
 }
 function toggleCollectable(collectable: Collectable) : void {
     collectable.toggle();
@@ -544,6 +586,24 @@ function onShowHardModeChanged(): void {
 }
 function updateSniConnectionStatus(message: string):void {
   let statusElement = document.getElementById("connectionStatus");
-  if(statusElement)
-    statusElement.textContent = "Autotracking Status: "+message;
+  if(statusElement) {
+    statusElement.textContent = message;
+  }
+}
+
+function onPortChanged(): void {
+  let textAutotrackerPort = <HTMLInputElement>document.getElementById("inputPort");
+  autotracker.setPort(parseInt(textAutotrackerPort.value));
+}
+
+function notifyWorldIsOpenChanged(element: HTMLElement, world: number, isOpen:boolean) {
+  let worldElement = element?element:document.getElementById("world-"+world);
+  if(worldElement.id==="world-"+world) {
+	worldElement.classList.toggle("isOpen", isOpen);
+	worldElement.classList.toggle("isNotOpen", !isOpen);
+  }
+}
+
+function toggleWorldOpenState(world:number) {
+  state.toggleWorldOpen(world);
 }

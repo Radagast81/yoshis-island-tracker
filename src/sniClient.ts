@@ -82,7 +82,10 @@ class SNIClient {
         this.cleanup();
         return;
     }
-
+	if(!this.webSocketURL||this.webSocketURL.length<1) {
+      this.setConnectionStatus("");
+	  return;
+	}
     this.setConnectionStatus("Connecting");
 	
     this.webSocket = new WebSocket(this.webSocketURL);
@@ -146,6 +149,10 @@ class SNIClient {
 		this.webSocket.close();
     }
     this.webSocket = null;
+  }
+  
+  disconnect() {
+    this.cleanup();
   }
   
   private snesRead(romData: RomData) {

@@ -245,6 +245,8 @@ class State {
   readonly bosses: Map<string, Boss> = new Map<string, Boss>();
   readonly collectables: Map<CollectableTypes, Collectable> = new Map<CollectableTypes, Collectable>();
   readonly bowserCastleRoutes: Map<BowserCastleRouteTypes, BowserCastleRoute> = new Map<BowserCastleRouteTypes, BowserCastleRoute>();
+  readonly worldOpen: Map<number, boolean> = new Map<number, boolean>();
+  private worldOpenChangeListener: {(world: number, isOpen: boolean): void }[] = [];
   
   constructor() {
     for(let c of allCollectables) {
@@ -257,6 +259,7 @@ class State {
 	  this.bosses.set(b, new Boss(b));
 	}
     for(let w=1; w<=6; w++) {
+	  this.worldOpen.set(w, w===1);
 	  for(let l=1; l<10; l++) {
 	    let level = new WorldLevel(w,l);
 		if(level.isBossLevel) {
@@ -279,6 +282,27 @@ class State {
   }
   getGoal(world: number, level: number, goaltype: WorldGoalTypes) : WorldGoal {
     return this.getLevel(world, level)?.getGoal(goaltype);
+  }
+  
+  isWorldOpen(world:number) {
+    return this.worldOpen.get(world);
+  }
+  setWorldOpen(world:number, isOpen: boolean) {
+    let changed = this.isWorldOpen(world)!== isOpen;
+	this.worldOpen.set(world, isOpen);
+	if(changed)
+	  this.worldOpenChangeListener.filter(listener=>listener).forEach(listener=>listener(world, isOpen));
+  }
+  toggleWorldOpen(world:number) {
+    this.setWorldOpen(world, !this.isWorldOpen(world));
+  }
+  
+  addWorldOpenChangeListener(listener: {(world: number, isOpen: boolean): void }): number {
+    return this.worldOpenChangeListener.push(listener) - 1;
+  }
+  
+  removeWorldOpenChangeListener(index: number) : void {
+    this.worldOpenChangeListener[index] = null;
   }
 }
 var state : State = new State();

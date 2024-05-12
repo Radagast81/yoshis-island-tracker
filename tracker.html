@@ -34,6 +34,10 @@
 					<option value="Gaunlet">Gaunlet (All Doors)</option>
 				  </select>
 				</label>
+				<label class="textField">
+			      Autotracker Port:
+				  <input class="textField" name="inputPort" id="inputPort" value="23074" type=number" size=13 onchange="onPortChanged()"></input>
+				</label>
 				<input type="checkbox" id="chkShowHardMode" name="chkShowHardMode" onchange="onShowHardModeChanged()">
 				<label for="chkShowHardMode">Show harder difficulty beatability</label>
 				<button id="btnResetLayout" onclick="resetCollectableList()">Reset Layout</button>

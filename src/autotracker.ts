@@ -31,7 +31,7 @@ class MyAutotracker {
   
   
   addConnectionStatusListener(listener: {(connectionStatus: string): void }): number {
-    return this.sniClient.addConnectionStatusListener(listener);
+    return this.sniClient.addConnectionStatusListener((status)=>listener(status.length>0?"Autotracking Status: "+status:""));
   }
   
   constructor() {
@@ -47,7 +47,7 @@ class MyAutotracker {
   }
   
   setPort(port: number) {
-    this.sniClient.setURL("ws://localhost:"+port);
+    this.sniClient.setURL(port?"ws://localhost:"+port:null);
   }
   private setCollectable(collectableType: CollectableTypes, value: boolean) {
     let collectable : Collectable = this.state.collectables.get(collectableType);
@@ -93,7 +93,7 @@ class MyAutotracker {
     this.setCollectable(CollectableTypes.Midring, colVals.getDataAsBoolean(0x1A)||!optionShuffleMidrings);
     this.setCollectable(CollectableTypes.Bucket, colVals.getDataAsBoolean(0x1B));
     this.setCollectable(CollectableTypes.Tulip, colVals.getDataAsBoolean(0x1C));
-    this.setCollectableEgg(colVals.getDataAsNumber(0x1D)+1);
+    this.setCollectableEgg(colVals.getDataAsNumber(0x1D));
 	
 	let goalVals: RomData = data.get("Goals");
 	for(let [id,lvl] of this.state.worldLevels) {
