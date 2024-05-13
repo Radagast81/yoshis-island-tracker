@@ -6,6 +6,9 @@ abstract class State {
   readonly worldLevels: Map<string, WorldLevel> = new Map<string, WorldLevel>();
   readonly worldGoals: Map<string, WorldGoal> = new Map<string, WorldGoal>();
   readonly collectables: Map<CollectableTypes, Collectable> = new Map<CollectableTypes, Collectable>();
+  
+  abstract isWorldOpen(world:number): boolean;
+  abstract setWorldOpen(world:number, isOpen: boolean): void;
 }
 abstract class Collectable {
   readonly collectableType: CollectableTypes;;
@@ -28,6 +31,8 @@ abstract class WorldGoal {
 class MyAutotracker {
   private sniClient: SNIClient;
   private state : State;
+  //private lastNumber : number[];
+  //private diffNumber : number[];
   
   
   addConnectionStatusListener(listener: {(connectionStatus: string): void }): number {
@@ -40,9 +45,11 @@ class MyAutotracker {
 	
     this.sniClient.addDataSource("Title", 0x007FC0, 0X0015);
     this.sniClient.addDataSource("Options", 0x06FC80, 0X0040);
-    this.sniClient.addDataSource("Collectables", 0x00, 0x0020, WRAM_START+0x1440);
-	
+    this.sniClient.addDataSource("Collectables", 0x00, 0x0040, WRAM_START+0x1440);
     this.sniClient.addDataSource("Goals", 0x00, 0X0100, WRAM_START+0x146D);
+	
+    //this.sniClient.addDataSource("All", 0x00, 0x2000, WRAM_START);
+	
     this.sniClient.addDataChangeListener((data)=>this.notifyDataChanged(data));
   }
   
@@ -62,6 +69,7 @@ class MyAutotracker {
   private notifyDataChanged(data: Map<string, RomData>) {
     let optVals: RomData = data.get("Options");
 	let optionShuffleMidrings = optVals.getDataAsNumber(0x06FC88);
+	let optionStartWorld: number = optVals.getDataAsNumber(0x06FC83)+1;
 	
 	let colVals = data.get("Collectables");
     this.setCollectable(CollectableTypes.Switch, colVals.getDataAsBoolean(0x00));
@@ -108,6 +116,30 @@ class MyAutotracker {
 		}
 	  }
 	}
+	let worldState: number = colVals.getDataAsNumber(0x20);
+	for(let world=1; world<=6; world++) {
+	  if(!state.isWorldOpen(world)&&((worldState&(1<<(world-1)))!=0||world===optionStartWorld))
+	    state.setWorldOpen(world, true);
+	}
+	
+	//let curNumber = Array.from(data.get("All").data);
+	
+	/*if(!this.diffNumber)
+	  this.diffNumber = new Array(curNumber.length);
+	if(this.lastNumber) {
+	  let j=0;
+	  for(let i=0; i<curNumber.length; i++) {
+	    if(!this.diffNumber[i])
+		  this.diffNumber[i]=0;
+	    this.diffNumber[i] += this.diffNumber[i]<10&&this.lastNumber[i]!=curNumber[i]?1:0;
+		if(j<10&&this.diffNumber[i]===1) {
+		  j++;
+		  console.log("Diff: "+i.toString(16));
+		 }
+	  }
+	}
+	this.lastNumber = curNumber;*/
+	
   }
 }
 var createAutotracker = () => { return new MyAutotracker(); }

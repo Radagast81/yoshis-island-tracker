@@ -259,7 +259,7 @@ class State {
 	  this.bosses.set(b, new Boss(b));
 	}
     for(let w=1; w<=6; w++) {
-	  this.worldOpen.set(w, w===1);
+	  this.worldOpen.set(w, false);
 	  for(let l=1; l<10; l++) {
 	    let level = new WorldLevel(w,l);
 		if(level.isBossLevel) {
