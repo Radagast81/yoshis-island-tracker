@@ -318,17 +318,19 @@ function setupWorldsInHTML() : void {
 	    });
 		notifyWorldIsOpenChanged(rowElement, world.world, state.worldOpen.get(world.world));
 		worldNode.appendChild(rowElement);
+		let rowCollider = Object.assign(document.createElement("img"), {
+		  className: "worldCollider",
+		  onclick: (e:Event) => toggleWorldOpenState(world.world)
+		});
 		let rowLabel = Object.assign(document.createElement("div"), {
 		  textContent: "World - "+world.world,
-		  className: "worldLabel",
-		  ondblclick: (e:Event) => toggleWorldOpenState(world.world)
+		  className: "worldLabel"
 		});
-		rowElement.appendChild(rowLabel);
+		rowElement.append(rowCollider, rowLabel);
       }
 	    // Worlds
 		let worldLabeledIcon = Object.assign(document.createElement("figure"), {
-		  className: "worldIcon",
-		  ondblclick: (e:Event) => toggleWorldOpenState(world.world)
+		  className: "worldIcon level-"+world.level
 		});
 		world.htmlElement = worldLabeledIcon;
 		let worldLabel = Object.assign(document.createElement("a"), {
@@ -345,15 +347,13 @@ function setupWorldsInHTML() : void {
 		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world)
 		});
 		let worldImageFinish = Object.assign(document.createElement("img"), {
-		  src: "images/states/Medal.png",
 		  id: "world-"+worldId+"-finish",
 		  className: "worldFinishedImage",
-		  width: 17,
+		  width: 54,
 		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world)
 		});
 		if(world.isBossLevel()) {
 		  worldLabeledIcon.classList.add("castle");
-		  worldLabeledIcon.style.backgroundImage = "url(\"images/worlds/Castle_"+world.level+".png\"";
 		  worldImage.classList.add("castle");
           if(!world.isBowserLevel()) {
 		    worldImage = Object.assign(worldImage, {

@@ -61,7 +61,7 @@ a {
 .worldIcon.castle {
 	background-repeat: no-repeat;
 	background-size: 64px 70px;
-	background-position: left 0px top 1px;
+	background-position: left 1px top 1px;
 }
 .worldIconImage {
    position: relative;
@@ -194,6 +194,7 @@ a {
 div.worldLabel {
 	color: black;
 	margin: 2px;
+	margin-left: 16px;
 	font-weight: bold;
 }
 .isOpen div.worldLabel {
@@ -201,18 +202,47 @@ div.worldLabel {
 }
 .worldFinishedImage {
 	display: none;
+    content: url(../images/states/golden_frame_with_medal.png);
 	position: absolute;
-	right:0px;
-	bottom:10px;
+	right:-1px;
+	bottom:11px;
 	z-index:1;
+}
+.castle .worldFinishedImage {
+    content: url(../images/states/Medal.png);
+    width: 17px;
 }
 figure.worldIcon {
 	position: relative;
+	margin-left:1px;
 }
 
 figure.worldIcon.isFinished .worldFinishedImage {
 	display: block;
 }
+figure.worldIcon.level-4 {
+	background-image: url(../images/worlds/Castle_4.png);
+}
+figure.worldIcon.level-8 {
+	background-image: url(../images/worlds/Castle_8.png);
+}
+figure.worldIcon.isFinished.level-4 {
+	background-image: url(../images/worlds/Castle_4_gold.png);
+}
+figure.worldIcon.isFinished.level-8 {
+	background-image: url(../images/worlds/Castle_8_gold.png);
+}
 figure.worldIcon.noOpenGoals{
    opacity: 0.2;
+}
+.worldCollider {
+   content: url(../images/states/plus.png);
+   position: absolute;
+   width: 12px;
+   left: 2px;
+   top: 2px;
+   z-index: 1;
+}
+.isOpen .worldCollider {
+   content: url(../images/states/minus.png);
 }
