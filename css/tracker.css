@@ -110,6 +110,9 @@ div.infoBoxText.status {
 	right: 0px;
 	bottom: 0px;
 }
+.infoBoxText {
+	white-space: pre-wrap;
+}
 label.infoBoxLabel {
     font-weight: bold;
 }
