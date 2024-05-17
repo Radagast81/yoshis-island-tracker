@@ -20,6 +20,8 @@ abstract class WorldLevel {
   readonly level: number;
   goals: WorldGoal[];
   abstract isBowserLevel() : boolean;
+  abstract setLocked(locked: boolean): void;
+  abstract isLocked() : boolean;
 }
 abstract class WorldGoal {
   readonly goalType: WorldGoalTypes;
@@ -117,14 +119,18 @@ class MyAutotracker {
 	  }
 	}
 	let worldState: number = colVals.getDataAsNumber(0x20);
+	let extraLevelState: number = colVals.getDataAsNumber(0x21);
 	for(let world=1; world<=6; world++) {
 	  if(!state.isWorldOpen(world)&&((worldState&(1<<(world-1)))!=0||world===optionStartWorld))
 	    state.setWorldOpen(world, true);
+	  let extraStage = state.worldLevels.get(world+"-E");
+	  if(extraStage.isLocked()&&(extraLevelState&(1<<(world-1)))!=0)
+	    extraStage.setLocked(false);
 	}
 	
-	//let curNumber = Array.from(data.get("All").data);
+	/*let curNumber = Array.from(data.get("All").data);
 	
-	/*if(!this.diffNumber)
+	if(!this.diffNumber)
 	  this.diffNumber = new Array(curNumber.length);
 	if(this.lastNumber) {
 	  let j=0;
