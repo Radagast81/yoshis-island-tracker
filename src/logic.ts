@@ -47,6 +47,74 @@ var allBowserCastleRoutes =
   ,BowserCastleRouteTypes.Door4];
 var evaluationState: EvaluationState;
 
+var levelNames: Map<string, string> = new Map([
+        ["1-1", "Make Eggs, Throw Eggs"],
+        ["1-2", "Watch Out Below!"],
+        ["1-3", "The Cave Of Chomp Rock"],
+        ["1-4", "Burt The Bashful's Fort"],
+        ["1-5", "Hop! Hop! Donut Lifts"],
+        ["1-6", "Shy-Guys On Stilts"],
+        ["1-7", "Touch Fuzzy Get Dizzy"],
+        ["1-8", "Salvo The Slime's Castle"],
+        ["1-E", "Poochy Ain't Stupid"],
+        ["1-B", "Flip Cards"],
+		/*******************************************/
+        ["2-1", "Visit Koopa And Para-Koopa"],
+        ["2-2", "The Baseball Boys"],
+        ["2-3", "What's Gusty Taste Like?"],
+        ["2-4", "Bigger Boo's Fort"],
+        ["2-5", "Watch Out For Lakitu"],
+        ["2-6", "The Cave Of The Mystery Maze"],
+        ["2-7", "Lakitu's Wall"],
+        ["2-8", "The Potted Ghost's Castle"],
+        ["2-E", "Hit That Switch!!"],
+        ["2-B", "Scratch And Match"],
+		/*******************************************/
+        ["3-1", "Welcome To Monkey World!"],
+        ["3-2", "Jungle Rhythm..."],
+        ["3-3", "Nep-Enuts' Domain"],
+        ["3-4", "Prince Froggy's Fort"],
+        ["3-5", "Jammin' Through The Trees"],
+        ["3-6", "The Cave Of Harry Hedgehog"],
+        ["3-7", "Monkeys' Favorite Lake"],
+        ["3-8", "Naval Piranha's Castle"],
+        ["3-E", "More Monkey Madness"],
+        ["3-B", "Drawing Lots"],
+		/*******************************************/
+        ["4-1", "GO! GO! MARIO!!"],
+        ["4-2", "The Cave Of The Lakitus"],
+        ["4-3", "Don't Look Back!"],
+        ["4-4", "Marching Milde's Fort"],
+        ["4-5", "Chomp Rock Zone"],
+        ["4-6", "Lake Shore Paradise"],
+        ["4-7", "Ride Like The Wind"],
+        ["4-8", "Hookbill The Koopa's Castle"],
+        ["4-E", "The Impossible? Maze"],
+        ["4-B", "Match Cards"],
+		/*******************************************/
+        ["5-1", "BLIZZARD!!!"],
+        ["5-2", "Ride The Ski Lifts"],
+        ["5-3", "Danger - Icy Conditions Ahead"],
+        ["5-4", "Sluggy The Unshaven's Fort"],
+        ["5-5", "Goonie Rides!"],
+        ["5-6", "Welcome To Cloud World"],
+        ["5-7", "Shifting Platforms Ahead"],
+        ["5-8", "Raphael The Raven's Castle"],
+        ["5-E", "Kamek's Revenge"],
+        ["5-B", "Roulette"],
+		/*******************************************/
+        ["6-1", "Scary Skeleton Goonies!"],
+        ["6-2", "The Cave Of The Bandits"],
+        ["6-3", "Beware The Spinning Logs"],
+        ["6-4", "Tap-Tap The Red Nose's Fort"],
+        ["6-5", "The Very Loooooong Cave"],
+        ["6-6", "The Deep, Underground Maze"],
+        ["6-7", "KEEP MOVING!!!!"],
+        ["6-8", "King Bowser's Castle"],
+        ["6-E", "Castles - Masterpiece Set"],
+        ["6-B", "Slot Machine"]
+]);
+
 function calcWorldId(world: number, level: number) {
   return world + "-" + (level>8?"E":level);
 }
@@ -62,6 +130,7 @@ function getActiveRule(rules: (() => boolean)[]) : () => boolean {
 class WorldLevel {
   readonly world: number;
   readonly level: number;
+  readonly name: string;
   private locked: boolean;
   boss : Boss;
   goals: WorldGoal[] = [];
@@ -79,6 +148,7 @@ class WorldLevel {
     this.world = world;
     this.level = level;
 	this.locked = level>8;
+	this.name = levelNames.get(this.getId());
   }
   isBossLevel() : boolean {
     return this.level%4==0;

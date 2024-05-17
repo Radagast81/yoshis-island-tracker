@@ -42,6 +42,16 @@
 				<label for="chkShowHardMode">Show harder difficulty beatability</label>
 				<button id="btnResetLayout" onclick="resetCollectableList()">Reset Layout</button>
 			</div>
+			<div id="optionsoverlay2">
+				<label class="dropdown">
+			      Level search:
+				  <input class="textField" type="text" name="level" list="levelList" id="inputLevelSearch" onchange="doSearchLevel()">
+				  <datalist id="levelList">
+				  </datalist>
+				</label>
+				<label id="levelSearchResult" width=30px>
+				</label>
+			</div>
 			<div id="trackingoverlay" class="trackingArea"></div>
 		    <div id="worldoverlay" class="trackingArea"></div>
 			<div class="infoBox">

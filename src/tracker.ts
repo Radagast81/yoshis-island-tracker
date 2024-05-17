@@ -8,6 +8,7 @@ declare global {
 abstract class WorldLevel {
   readonly world: number;
   readonly level: number;
+  readonly name: string;
   boss : Boss;
   goals: WorldGoal[];
   abstract getId() : string;
@@ -70,6 +71,7 @@ abstract class Autotracker {
 }
 
 var state : State;
+var levelNames: Map<string, string>;
 
 function getWorldGoalId(world:number, level: number, goaltype: WorldGoalTypes) : string {
   return state.getGoal(world, level, goaltype).getId();
@@ -267,6 +269,12 @@ function setupMenuInHTML() : void {
   
   let checkBoxShowHardMode = <HTMLInputElement>document.getElementById("chkShowHardMode");
   checkBoxShowHardMode.checked = optionShowHardMode;  
+  
+  let levelListElement = <HTMLElement>document.getElementById("levelList");
+  for(let [id,name] of levelNames.entries()) {
+    levelListElement.appendChild(Object.assign(document.createElement("option"), { value: name }));
+  }
+  doSearchLevel();
 }
 
 function setupCollectablesInHTML() : void {
@@ -365,6 +373,7 @@ function setupWorldsInHTML() : void {
 		  src: "images/worlds/" + worldId + ".png",
 		  id: "world-"+worldId,
 		  className: "worldIconImage",
+		  title: world.name,
 		  width: 48,
 		  height: 48,
 		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world)
@@ -629,4 +638,18 @@ function notifyWorldIsOpenChanged(element: HTMLElement, world: number, isOpen:bo
 
 function toggleWorldOpenState(world:number) {
   state.toggleWorldOpen(world);
+}
+
+function doSearchLevel() {
+  let inputField = <HTMLInputElement>document.getElementById("inputLevelSearch");
+  let resultField = <HTMLElement>document.getElementById("levelSearchResult");
+  let result: string = "";
+
+  if(inputField.value && inputField.value.length>0)
+  for(let [id,name] of levelNames.entries()) {
+    if(name.toLowerCase().startsWith(inputField.value.toLowerCase())) {
+	  result = "> "+id;
+	}
+  }
+  resultField.textContent = result;
 }
