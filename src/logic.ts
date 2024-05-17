@@ -62,12 +62,23 @@ function getActiveRule(rules: (() => boolean)[]) : () => boolean {
 class WorldLevel {
   readonly world: number;
   readonly level: number;
+  private locked: boolean;
   boss : Boss;
   goals: WorldGoal[] = [];
+  private lockChangeListener: {(level: WorldLevel): void }[] = [];
+  
+  addLockChangeListener(listener: {(level: WorldLevel): void }): number {
+    return this.lockChangeListener.push(listener) - 1;
+  }
+  
+  removeLockChangeListener(index: number) : void {
+    this.lockChangeListener[index] = null;
+  }
   
   constructor(world: number, level: number) {
     this.world = world;
     this.level = level;
+	this.locked = level>8;
   }
   isBossLevel() : boolean {
     return this.level%4==0;
@@ -98,6 +109,19 @@ class WorldLevel {
 	for(let goal of this.goals) {
 	  goal.setCompleted(!isActive);
 	}
+  }
+  
+  setLocked(locked: boolean): void {
+    let changed: boolean = (locked !== this.locked);
+	this.locked = locked;
+	if(changed)
+	  this.lockChangeListener.filter(listener=>listener).forEach(listener=>listener(this));
+  }
+  isLocked() : boolean {
+    return this.locked;
+  }
+  toggleLocked(): void {
+    this.setLocked(!this.locked);
   }
 }
 

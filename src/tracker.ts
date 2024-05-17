@@ -15,6 +15,9 @@ abstract class WorldLevel {
   abstract isBowserLevel() : boolean;
   abstract toggleGoalsCompleted() : void;
   abstract switchBossWithLevel(other: WorldLevel): void;
+  abstract addLockChangeListener(listener: {(level: WorldLevel): void }): number;
+  abstract isLocked() : boolean;
+  abstract toggleLocked(): void;
   
   htmlElement: HTMLElement;
 }
@@ -168,6 +171,7 @@ function updateLevelState(level: WorldLevel) {
 	}
   }
   level.htmlElement.classList.toggle("isFinished", isLevelFinished);
+  level.htmlElement.classList.toggle("isLocked", level.isLocked());
   level.htmlElement.classList.toggle("noOpenGoals", !isLevelFinished&&!isGoalOpen);
 }
 
@@ -180,6 +184,10 @@ function updateWorldGoalState(goal: WorldGoal) {
 	goal.htmlImage.src = imgPath + goal.goalType + ".png";
 	goal.htmlImage.classList.toggle("completed", true);
 	goal.htmlImage.classList.toggle("blocked", false);
+  } else if(goal.level.isLocked()) {
+	goal.htmlImage.src = imgPath + goal.goalType + "_unchecked.png";
+	goal.htmlImage.classList.toggle("completed", false);
+	goal.htmlImage.classList.toggle("blocked", true);  
   } else {
 	goal.htmlImage.src = imgPath + goal.goalType + "_unchecked.png";
     
@@ -333,8 +341,23 @@ function setupWorldsInHTML() : void {
 		  className: "worldIcon level-"+world.level
 		});
 		world.htmlElement = worldLabeledIcon;
+		if (world.level===9) {
+		  let worldLockToggle = Object.assign(document.createElement("img"), {
+		    id: "world-lock-toggle-"+worldId,
+		    className: "worldLockToggle"+(world.isLocked()?" isLocked":""),
+		    onclick: (e:Event) => world.toggleLocked()
+		  });
+		  world.addLockChangeListener((lvl)=>{
+		    worldLockToggle.classList.toggle("isLocked", lvl.isLocked());
+			for(let g of lvl.goals) {
+			  updateWorldGoalState(g);
+			}
+		  });
+		  worldLabeledIcon.appendChild(worldLockToggle);
+		}
 		let worldLabel = Object.assign(document.createElement("a"), {
 		  href: "https://www.mariouniverse.com/wp-content/img/maps/snes/yi/"+world.world+"-"+(world.level<9?world.level:"ex")+".png",
+		  className: "worldLabel",
 		  target: "_blank",
 		  textContent: worldId,
 		});

@@ -235,7 +235,13 @@ figure.worldIcon.isFinished.level-4 {
 figure.worldIcon.isFinished.level-8 {
 	background-image: url(../images/worlds/Castle_8_gold.png);
 }
-figure.worldIcon.noOpenGoals{
+figure.worldIcon.noOpenGoals:not(.castle) .worldIconImage{
+   opacity: 0.2;
+}
+figure.worldIcon.noOpenGoals:not(.castle) .worldLabel{
+   opacity: 0.2;
+}
+figure.worldIcon.noOpenGoals.castle{
    opacity: 0.2;
 }
 .worldCollider {
@@ -248,4 +254,16 @@ figure.worldIcon.noOpenGoals{
 }
 .isOpen .worldCollider {
    content: url(../images/states/minus.png);
+}
+.worldLockToggle {
+   content: url(../images/states/lock_open.png);
+   position: absolute;
+   z-index: 1;
+   height: 12px;
+}
+.worldLockToggle.isLocked {
+   content: url(../images/states/lock_closed.png);
+}
+.isLocked:not(.isFinished) img.worldIconImage {
+   content: url(../images/worlds/unknown.png);
 }
