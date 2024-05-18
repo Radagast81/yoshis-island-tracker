@@ -115,6 +115,8 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
     setRule(1,3, WorldGoalTypes.Flowers, 
 	  [() => has(CollectableTypes.ChompRock)
 	  ,noItemsNeeded]);
+    setRule(1,3, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)]);
 	  
     setRule(1,4, WorldGoalTypes.RedCoins, 
 	  [() => has(CollectableTypes.SpringBallSmall)]);
@@ -152,6 +154,8 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
 	  [() => has(CollectableTypes.Midring)||(canSeeClouds()&&has(CollectableTypes.SpringBallSmall)&&has(CollectableTypes.ChompRock)&&has(CollectableTypes.Beanstalk))
 	  ,() => has(CollectableTypes.Midring)||(has(CollectableTypes.SpringBallSmall)&&has(CollectableTypes.ChompRock)&&has(CollectableTypes.Beanstalk))
 	  ,noItemsNeeded]);
+    setRule(1,7, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)]);
 
     setRule(1,8, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.PlatformGhost)]);
@@ -186,6 +190,8 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
 	  ,() => has(CollectableTypes.SpringBallLarge)]);
     setRule(2,1, WorldGoalTypes.LevelClear,
 	  [() => has(CollectableTypes.SpringBallLarge)]);
+    setRule(2,1, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.Poochy)&&has(CollectableTypes.SpringBallLarge)]);
 
     setRule(2,2, WorldGoalTypes.RedCoins, 
 	  [() => has(CollectableTypes.Beanstalk)&&has(CollectableTypes.SuperStar)&&has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.MorphMoleTank)&&has(CollectableTypes.EggLauncher)
@@ -212,6 +218,8 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
     setRule(2,3, WorldGoalTypes.LevelClear,
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.SuperStar)
 	  ,noItemsNeeded]);
+    setRule(2,3, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.MorphMoleTank)]);
 
     setRule(2,4, WorldGoalTypes.RedCoins, 
 	  [() => has(CollectableTypes.Switch)&&has(CollectableTypes.Key)&&has(CollectableTypes.DashedStairs)
@@ -252,6 +260,8 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
 	  ,noItemsNeeded]);
     setRule(2,6, WorldGoalTypes.LevelClear,
 	  [() => has(CollectableTypes.SpringBallLarge)]);
+    setRule(2,6, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.SpringBallLarge)]);
 
     setRule(2,7, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.SpringBallLarge)&&(has(CollectableTypes.DashedPlatform,consumableEgg)||has(CollectableTypes.GiantEgg,consumableEgg))
@@ -266,6 +276,8 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
     setRule(2,7, WorldGoalTypes.LevelClear,
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.MorphCar)
 	  ,noItemsNeeded]);
+    setRule(2,7, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)]);
 
     setRule(2,8, WorldGoalTypes.RedCoins, 
 	  [() => has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Key)&&hasEggs(2)
@@ -302,6 +314,9 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
     setRule(3,2, WorldGoalTypes.LevelClear, 
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.SpringBallSmall)
 	  ,() => has(CollectableTypes.DashedStairs)]);
+    setRule(3,2, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.DashedStairs)&&has(CollectableTypes.SpringBallSmall)
+	  ,() => has(CollectableTypes.Key)&&has(CollectableTypes.DashedStairs)]);
 	
     setRule(3,3, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.MorphHelicopter)&&has(CollectableTypes.MorphSubmarine)]);
@@ -362,10 +377,13 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
 	  ,noItemsNeeded]);
     setRule(3,7, WorldGoalTypes.Stars,
 	  [() => has(CollectableTypes.SpringBallLarge)
-	  ,noItemsNeeded])
+	  ,noItemsNeeded]);
     setRule(3,7, WorldGoalTypes.LevelClear,
 	  [() => has(CollectableTypes.SpringBallLarge)
-	  ,noItemsNeeded])
+	  ,noItemsNeeded]);
+    setRule(3,7, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.SpringBallLarge)
+      ,() => has(CollectableTypes.Key)]);
 	
     setRule(3,8, WorldGoalTypes.RedCoins, 
 	  [() => hasEggs(4,consumableEgg)
@@ -412,6 +430,10 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
 	  [() => has(CollectableTypes.SpringBallLarge)
 	  ,sameRule
 	  ,noItemsNeeded]);
+    setRule(4,2, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.SpringBallLarge)
+	  ,sameRule
+	  ,() => has(CollectableTypes.Key)]);
 	
     setRule(4,3, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Switch)&&has(CollectableTypes.MorphHelicopter)
@@ -471,6 +493,8 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
 	  [() => has(CollectableTypes.EggPlant,consumableEgg)
 	  ,sameRule
 	  ,noItemsNeeded]);
+    setRule(4,6, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.SpringBallLarge)]);
 	
     setRule(4,7, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.SpringBallLarge)]);
@@ -481,6 +505,8 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
 	  ,() => has(CollectableTypes.SpringBallLarge)&&(has(CollectableTypes.Midring)||has(CollectableTypes.MorphHelicopter))]);
     setRule(4,7, WorldGoalTypes.LevelClear,
 	  [() => has(CollectableTypes.SpringBallLarge)]);
+    setRule(4,7, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.SpringBallLarge)]);
 	
     setRule(4,8, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.Key)
@@ -516,6 +542,9 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
 	setRule(5,1, WorldGoalTypes.Stars,
 	  [()=>canSeeClouds()||has(CollectableTypes.Tulip)||(has(CollectableTypes.Midring)&&has(CollectableTypes.DashedStairs))
 	  ,noItemsNeeded]);
+    setRule(5,1, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)]);
+	  
 	setRule(5,2, WorldGoalTypes.Stars,
 	  [()=>has(CollectableTypes.Midring)||has(CollectableTypes.SuperStar)
 	  ,noItemsNeeded]);
@@ -615,6 +644,10 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
     setRule(6,1, WorldGoalTypes.LevelClear, 
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.DashedPlatform)
 	  ,() => has(CollectableTypes.SpringBallLarge)]);
+    setRule(6,1, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.DashedPlatform)&&has(CollectableTypes.Beanstalk)
+      ,sameRule
+	  ,() => has(CollectableTypes.Key)]);
 	
     setRule(6,2, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.SuperStar)]);
@@ -680,6 +713,8 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
 	  ,noItemsNeeded]);
     setRule(6,7, WorldGoalTypes.Stars,
 	  [() => has(CollectableTypes.Midring)]);
+    setRule(6,7, WorldGoalTypes.Game, 
+	  [() => has(CollectableTypes.Key)]);
 	
     setRule(6,8, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.MorphHelicopter)&&has(CollectableTypes.EggPlant)

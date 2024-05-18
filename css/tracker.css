@@ -8,7 +8,7 @@ label {
 	display: inline-block; 
 }
 
-div { 
+div:not(.worldGoals) { 
 	margin: 3px 0; 
 }
 
@@ -128,6 +128,9 @@ label.infoBoxLabel {
 }
 .worldGoals {
 	position: relative;
+}
+.worldGoals.col {
+	margin-bottom: 3px;
 }
 .row.world {
 	padding-right:2px;
@@ -266,4 +269,30 @@ figure.worldIcon.noOpenGoals.castle{
 }
 .isLocked:not(.isFinished) img.worldIconImage {
    content: url(../images/worlds/unknown.png);
+}
+.goalType-Game {
+   z-index: 1;
+   bottom: 0px;
+   left: -16px;
+   position: absolute;
+   display: none;
+}
+
+.Minigame-Bandit .goalType-Game {
+	display: block;
+}
+.Minigame-Bandit .worldGoals.col {
+	margin-bottom: 2px;
+}
+
+.level-10 {
+	display: none;
+}
+
+.Minigame-Bonus .isOpen .level-10 {
+	display: inline-block;
+}
+.littleDisplayField {
+	width: 40px;
+	display: inline-block;
 }

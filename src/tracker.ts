@@ -1,4 +1,4 @@
-import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState } from "./model/types";
+import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState, GameOptions } from "./model/types";
 
 declare global {
     interface Window { 
@@ -10,7 +10,7 @@ abstract class WorldLevel {
   readonly level: number;
   readonly name: string;
   boss : Boss;
-  goals: WorldGoal[];
+  goals: Map<WorldGoalTypes,WorldGoal> = new Map<WorldGoalTypes,WorldGoal>();
   abstract getId() : string;
   abstract isBossLevel() : boolean;
   abstract isBowserLevel() : boolean;
@@ -26,6 +26,7 @@ abstract class WorldGoal {
   // included from logic.ts:
   readonly goalType: WorldGoalTypes;
   readonly level: WorldLevel;
+  
   abstract getId() : string;
   abstract isCompleted() : boolean;
   abstract setCompleted(completed: boolean): void;
@@ -64,6 +65,9 @@ abstract class State {
   abstract getGoal(world: number, level: number, goaltype: WorldGoalTypes) : WorldGoal;
   abstract addWorldOpenChangeListener(listener: {(world: number, isOpen: boolean): void }): number;
   abstract toggleWorldOpen(world:number):void;
+  abstract addGameOptionChangeListener(listener: {(optionType: GameOptions, value: string|number|boolean): void }): number;
+  abstract getGameOption(optionType:GameOptions): string|number|boolean;
+  abstract setGameOption(optionType:GameOptions, value: string|number|boolean): void;
 }
 abstract class Autotracker {
   abstract addConnectionStatusListener(listener: {(connectionStatus: string): void }): number;
@@ -165,7 +169,13 @@ function checkForConsumable(goal: WorldGoal, target: CollectableTypes, difficult
 function updateLevelState(level: WorldLevel) {
   let isLevelFinished: boolean = true;
   let isGoalOpen: boolean = false;
-  for(let goal of level.goals) {
+  for(let [goalId, goal] of level.goals.entries()) {
+    if(goal.goalType==WorldGoalTypes.Game) {
+	  if(goal.level.level == 10&&!state.getGameOption(GameOptions.MinigameBonus))
+	    continue;
+	  if(goal.level.level < 10&&!state.getGameOption(GameOptions.MinigameBandit))
+	    continue;
+	}
     if(!goal.isCompleted()) {
 	  isLevelFinished = false;
 	  if(goal.htmlImage&&!goal.htmlImage.classList.contains("blocked"))
@@ -175,6 +185,11 @@ function updateLevelState(level: WorldLevel) {
   level.htmlElement.classList.toggle("isFinished", isLevelFinished);
   level.htmlElement.classList.toggle("isLocked", level.isLocked());
   level.htmlElement.classList.toggle("noOpenGoals", !isLevelFinished&&!isGoalOpen);
+}
+function updateAllLevelState() {
+  for (let [lvlId,lvl] of state.worldLevels.entries()) {
+    updateLevelState(lvl);
+  }
 }
 
 function updateWorldGoalState(goal: WorldGoal) {
@@ -275,6 +290,10 @@ function setupMenuInHTML() : void {
     levelListElement.appendChild(Object.assign(document.createElement("option"), { value: name }));
   }
   doSearchLevel();
+  
+  state.addGameOptionChangeListener((optionType, value) => notifyGameOptionChanged(optionType, value));
+  onOptionBonusLevelChanged(); 
+  onOptionBanditGamesChanged();
 }
 
 function setupCollectablesInHTML() : void {
@@ -349,18 +368,25 @@ function setupWorldsInHTML() : void {
 		  className: "worldIcon level-"+world.level
 		});
 		world.htmlElement = worldLabeledIcon;
-		if (world.level===9) {
+		if (world.level>=9) {
 		  let worldLockToggle = Object.assign(document.createElement("img"), {
 		    id: "world-lock-toggle-"+worldId,
 		    className: "worldLockToggle"+(world.isLocked()?" isLocked":""),
 		    onclick: (e:Event) => world.toggleLocked()
 		  });
-		  world.addLockChangeListener((lvl)=>{
-		    worldLockToggle.classList.toggle("isLocked", lvl.isLocked());
-			for(let g of lvl.goals) {
-			  updateWorldGoalState(g);
-			}
-		  });
+		  if(world.level==9) {
+			  world.addLockChangeListener((lvl)=>{
+				worldLockToggle.classList.toggle("isLocked", lvl.isLocked());
+				for(let [goalId, g] of lvl.goals.entries()) {
+				  updateWorldGoalState(g);
+				}
+			  });
+		  } else {
+			  world.addLockChangeListener((lvl)=>{
+				worldLockToggle.classList.toggle("isLocked", lvl.isLocked());
+				updateLevelState(lvl);
+			  });
+		  }
 		  worldLabeledIcon.appendChild(worldLockToggle);
 		}
 		let worldLabel = Object.assign(document.createElement("a"), {
@@ -399,52 +425,60 @@ function setupWorldsInHTML() : void {
 		  }
 		}
 		worldLabeledIcon.append(worldImage,worldLabel,worldImageFinish);
+	    rowElement.appendChild(worldLabeledIcon);
 		
 		// Goals
-		let goalsCol = Object.assign(document.createElement("div"), {
-		  className: "worldGoals col"
-		});
-		for(let goal of world.goals) {
-		  let goalsCell = Object.assign(document.createElement("div"), {
-			className: "worldGoals row",
-			onmouseover: (e:Event) => onMouseOverGoal(goal),
-			onmouseout: (e:Event) => onMouseOutGoal()
-		  });
-		  goal.htmlImage = Object.assign(document.createElement("img"), {
-		    id: goal.getId(),
-			className: "worldGoals image",
-			width: 16,
-			onclick: (e:Event) => toggleWorldGoalCompleted(goal)
-		  });
-		  goal.htmlImageSubstitute = Object.assign(document.createElement("img"), {
-		    id:  goal.getId()+"-substitute",
-		    className: "worldgoal-substitute",	  
-		    width: 10,
-		    height: 10,
-			onclick: (e:Event) => toggleWorldGoalCompleted(goal)
-		  });
-		  goal.htmlImageLenseNeeded = Object.assign(document.createElement("img"), {
-		    src: "images/collectables/Magic Lense.png",
-		    id:  goal.getId()+"-lenseNeeded",
-		    className: "worldgoal-lenseNeeded",	  
-		    width: 10,
-		    height: 10,
-			onclick: (e:Event) => toggleWorldGoalCompleted(goal),
-		  });
-		  goal.htmlImageBeatableWithHarderDifficulty = Object.assign(document.createElement("img"), {
-		    src: "images/collectables/Hard Mode.png",
-		    id:  goal.getId()+"-hardMode",
-		    className: "worldgoal-hardMode",	  
-		    width: 8,
-		    height: 8,
-			onclick: (e:Event) => toggleWorldGoalCompleted(goal)
-		  });
-          updateWorldGoalState(goal);
-		  goal.addDataChangeListener((goal)=> updateWorldGoalState(goal));
-		  goalsCell.append(goal.htmlImage, goal.htmlImageSubstitute,goal.htmlImageLenseNeeded,goal.htmlImageBeatableWithHarderDifficulty);
-	      goalsCol.appendChild(goalsCell);
+		if (world.level<10 ) {
+			let goalsCol = Object.assign(document.createElement("div"), {
+			  className: "worldGoals col"
+			});
+			for(let [goalId, goal] of world.goals.entries()) {
+			  let goalsCell = Object.assign(document.createElement("div"), {
+				className: "worldGoals row goalType-"+goal.goalType.replaceAll(" ", "-"),
+				onmouseover: (e:Event) => onMouseOverGoal(goal),
+				onmouseout: (e:Event) => onMouseOutGoal()
+			  });
+			  goal.htmlImage = Object.assign(document.createElement("img"), {
+				id: goal.getId(),
+				className: "worldGoals image",
+				width: 16,
+				onclick: (e:Event) => toggleWorldGoalCompleted(goal)
+			  });
+			  goal.htmlImageSubstitute = Object.assign(document.createElement("img"), {
+				id:  goal.getId()+"-substitute",
+				className: "worldgoal-substitute",	  
+				width: 10,
+				height: 10,
+				onclick: (e:Event) => toggleWorldGoalCompleted(goal)
+			  });
+			  goal.htmlImageLenseNeeded = Object.assign(document.createElement("img"), {
+				src: "images/collectables/Magic Lense.png",
+				id:  goal.getId()+"-lenseNeeded",
+				className: "worldgoal-lenseNeeded",	  
+				width: 10,
+				height: 10,
+				onclick: (e:Event) => toggleWorldGoalCompleted(goal),
+			  });
+			  goal.htmlImageBeatableWithHarderDifficulty = Object.assign(document.createElement("img"), {
+				src: "images/collectables/Hard Mode.png",
+				id:  goal.getId()+"-hardMode",
+				className: "worldgoal-hardMode",	  
+				width: 8,
+				height: 8,
+				onclick: (e:Event) => toggleWorldGoalCompleted(goal)
+			  });
+			  updateWorldGoalState(goal);
+			  goal.addDataChangeListener((goal)=> updateWorldGoalState(goal));
+			  goalsCell.append(goal.htmlImage, goal.htmlImageSubstitute,goal.htmlImageLenseNeeded,goal.htmlImageBeatableWithHarderDifficulty);
+			  goalsCol.appendChild(goalsCell);
+			}
+	        rowElement.appendChild(goalsCol);
+		} else {
+		    updateLevelState(world);
+			for(let [goalId, goal] of world.goals.entries()) {
+			  goal.addDataChangeListener((goal)=> updateLevelState(goal.level));
+			}
 		}
-	    rowElement.append(worldLabeledIcon, goalsCol);
   }
   state.addWorldOpenChangeListener((world, isOpen)=> notifyWorldIsOpenChanged(null, world, isOpen));
 }
@@ -592,7 +626,10 @@ function onMouseOutGoal() : void {
 
 function updateAllWorldGoals() : void {
   for(let [id, goal] of state.worldGoals) {
-    updateWorldGoalState(goal);
+    if(goal.level.level==10)
+	  updateLevelState(goal.level);
+	else
+      updateWorldGoalState(goal);
   }
 }
 
@@ -652,4 +689,31 @@ function doSearchLevel() {
 	}
   }
   resultField.textContent = result;
+}
+
+function onOptionBonusLevelChanged(): void {
+  let checkBoxOptionBonusLevel = <HTMLInputElement>document.getElementById("chkBonusLevel");
+  state.setGameOption(GameOptions.MinigameBonus, checkBoxOptionBonusLevel.checked);
+}
+
+function onOptionBanditGamesChanged(): void {
+  let checkBoxOptionBanditGames = <HTMLInputElement>document.getElementById("chkBanditGames");
+  state.setGameOption(GameOptions.MinigameBandit, checkBoxOptionBanditGames.checked);
+}
+
+function notifyGameOptionChanged(optionType: GameOptions, value: string|number|boolean) {
+  if(GameOptions.MinigameBonus === optionType||GameOptions.MinigameBandit=== optionType) {
+    let mainElement = <HTMLElement>document.getElementById("app");
+	mainElement.classList.toggle(optionType.replace(" ","-"), <boolean>value);
+	if(GameOptions.MinigameBonus === optionType) {
+      let checkBoxOptionBonusLevel = <HTMLInputElement>document.getElementById("chkBonusLevel");
+	  if(checkBoxOptionBonusLevel.checked !== value)
+	    checkBoxOptionBonusLevel.checked = <boolean>value;
+	} else if(GameOptions.MinigameBandit === optionType) {
+      let checkBoxOptionBanditGames = <HTMLInputElement>document.getElementById("chkBanditGames");
+	  if(checkBoxOptionBanditGames.checked !== value)
+	    checkBoxOptionBanditGames.checked = <boolean>value;
+	}
+	updateAllLevelState();
+  }
 }

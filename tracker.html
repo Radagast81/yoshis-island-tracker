@@ -49,8 +49,12 @@
 				  <datalist id="levelList">
 				  </datalist>
 				</label>
-				<label id="levelSearchResult" width=30px>
+				<label id="levelSearchResult" class="littleDisplayField">
 				</label>
+				<input type="checkbox" id="chkBonusLevel" name="chkBonusLevel" onchange="onOptionBonusLevelChanged()">
+				<label for="chkBonusLevel">Bonus Level</label>
+				<input type="checkbox" id="chkBanditGames" name="chkBanditGames" onchange="onOptionBanditGamesChanged()">
+				<label for="chkBanditGames">Bandit games</label>
 			</div>
 			<div id="trackingoverlay" class="trackingArea"></div>
 		    <div id="worldoverlay" class="trackingArea"></div>

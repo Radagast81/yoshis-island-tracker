@@ -1,4 +1,4 @@
-import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState } from "./model/types";
+import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState, GameOptions } from "./model/types";
 
 var allGoals = [WorldGoalTypes.RedCoins,WorldGoalTypes.Flowers,WorldGoalTypes.Stars, WorldGoalTypes.LevelClear];
 var allBosses = [BossTypes.Boss14, BossTypes.Boss18
@@ -115,8 +115,10 @@ var levelNames: Map<string, string> = new Map([
         ["6-B", "Slot Machine"]
 ]);
 
+var gameLevels: string[] = ["1-3", "1-7", "2-1", "2-3", "2-6", "2-7", "3-2", "3-7", "4-2", "4-6", "4-7", "5-1", "6-1", "6-7"];
+
 function calcWorldId(world: number, level: number) {
-  return world + "-" + (level>8?"E":level);
+  return world + "-" + (level===9?"E":(level>9?"B":level));
 }
 
 function getActiveRule(rules: (() => boolean)[]) : () => boolean {
@@ -133,7 +135,7 @@ class WorldLevel {
   readonly name: string;
   private locked: boolean;
   boss : Boss;
-  goals: WorldGoal[] = [];
+  goals: Map<WorldGoalTypes,WorldGoal> = new Map<WorldGoalTypes,WorldGoal>();
   private lockChangeListener: {(level: WorldLevel): void }[] = [];
   
   addLockChangeListener(listener: {(level: WorldLevel): void }): number {
@@ -160,7 +162,7 @@ class WorldLevel {
     return calcWorldId(this.world, this.level);
   }
   getGoal(goal: WorldGoalTypes): WorldGoal {
-    return this.goals[allGoals.indexOf(goal)];
+    return this.goals.get(goal);
   }
   
   switchBossWithLevel(other: WorldLevel): void {
@@ -171,12 +173,12 @@ class WorldLevel {
   
   toggleGoalsCompleted() : void {
 	let isActive = true;
-	for(let goal of this.goals) {
+	for(let [id, goal] of this.goals.entries()) {
 	  if(!goal.isCompleted()) {
 		   isActive = false;
 		 }
 	  }
-	for(let goal of this.goals) {
+	for(let [id, goal] of this.goals.entries()) {
 	  goal.setCompleted(!isActive);
 	}
   }
@@ -340,7 +342,9 @@ class State {
   readonly collectables: Map<CollectableTypes, Collectable> = new Map<CollectableTypes, Collectable>();
   readonly bowserCastleRoutes: Map<BowserCastleRouteTypes, BowserCastleRoute> = new Map<BowserCastleRouteTypes, BowserCastleRoute>();
   readonly worldOpen: Map<number, boolean> = new Map<number, boolean>();
+  readonly gameOptions: Map<GameOptions, string|number|boolean> = new Map<GameOptions, string|number|boolean>();
   private worldOpenChangeListener: {(world: number, isOpen: boolean): void }[] = [];
+  private gameOptionChangeListener: {(optionType: GameOptions, value: string|number|boolean): void }[] = [];
   
   constructor() {
     for(let c of allCollectables) {
@@ -354,15 +358,21 @@ class State {
 	}
     for(let w=1; w<=6; w++) {
 	  this.worldOpen.set(w, false);
-	  for(let l=1; l<10; l++) {
+	  for(let l=1; l<=10; l++) {
 	    let level = new WorldLevel(w,l);
 		if(level.isBossLevel) {
 		  level.boss = this.bosses.get(allBosses[2 * (w-1)+ Math.floor((l-1)/4)]);
 		}
 		this.worldLevels.set(level.getId(), level);
-		for(let g of allGoals) {
-		  let goal = new WorldGoal(level, g);
-		  level.goals.push(goal);
+		if(l<10)
+			for(let g of allGoals) {
+			  let goal = new WorldGoal(level, g);
+			  level.goals.set(goal.goalType, goal);
+			  this.worldGoals.set(goal.getId(), goal);
+			}
+		if(l===10||gameLevels.includes(level.getId())) {
+		  let goal = new WorldGoal(level, WorldGoalTypes.Game);
+		  level.goals.set(goal.goalType, goal);
 		  this.worldGoals.set(goal.getId(), goal);
 		}
 	  }
@@ -398,5 +408,24 @@ class State {
   removeWorldOpenChangeListener(index: number) : void {
     this.worldOpenChangeListener[index] = null;
   }
+  
+  getGameOption(optionType:GameOptions) {
+    return this.gameOptions.get(optionType);
+  }
+  setGameOption(optionType:GameOptions, value: string|number|boolean) {
+    let changed = this.getGameOption(optionType)!== value;
+	this.gameOptions.set(optionType, value);
+	if(changed)
+	  this.gameOptionChangeListener.filter(listener=>listener).forEach(listener=>listener(optionType, value));
+  }
+  
+  addGameOptionChangeListener(listener: {(optionType: GameOptions, value: string|number|boolean): void }): number {
+    return this.gameOptionChangeListener.push(listener) - 1;
+  }
+  
+  removeGameOptionChangeListener(index: number) : void {
+    this.gameOptionChangeListener[index] = null;
+  }
 }
 var state : State = new State();
+var lastState : State = new State();

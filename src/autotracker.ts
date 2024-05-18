@@ -1,6 +1,8 @@
-import { WorldGoalTypes, CollectableTypes, BowserCastleRouteTypes } from "./model/types";
+import { WorldGoalTypes, CollectableTypes, BowserCastleRouteTypes, GameOptions } from "./model/types";
 var allBowserCastleRoutes: BowserCastleRouteTypes[];
+var possibleGoals = [WorldGoalTypes.RedCoins,WorldGoalTypes.Flowers,WorldGoalTypes.Stars, WorldGoalTypes.LevelClear, WorldGoalTypes.Game];
 var state : State;
+var lastState : State;
 var WRAM_START = 0xF50000;
 abstract class State {
   readonly worldLevels: Map<string, WorldLevel> = new Map<string, WorldLevel>();
@@ -9,6 +11,8 @@ abstract class State {
   
   abstract isWorldOpen(world:number): boolean;
   abstract setWorldOpen(world:number, isOpen: boolean): void;
+  abstract getGameOption(optionType:GameOptions): string|number|boolean;
+  abstract setGameOption(optionType:GameOptions, value: string|number|boolean): void;
 }
 abstract class Collectable {
   readonly collectableType: CollectableTypes;;
@@ -18,7 +22,7 @@ abstract class Collectable {
 abstract class WorldLevel {
   readonly world: number;
   readonly level: number;
-  goals: WorldGoal[];
+  goals: Map<WorldGoalTypes,WorldGoal>;
   abstract isBowserLevel() : boolean;
   abstract setLocked(locked: boolean): void;
   abstract isLocked() : boolean;
@@ -33,6 +37,7 @@ abstract class WorldGoal {
 class MyAutotracker {
   private sniClient: SNIClient;
   private state : State;
+  private lastState: State;
   //private lastNumber : number[];
   //private diffNumber : number[];
   
@@ -43,6 +48,7 @@ class MyAutotracker {
   
   constructor() {
     this.state = state;
+	this.lastState = lastState;
     this.sniClient = new SNIClient("ws://localhost:23074");
 	
     this.sniClient.addDataSource("Title", 0x007FC0, 0X0015);
@@ -72,6 +78,15 @@ class MyAutotracker {
     let optVals: RomData = data.get("Options");
 	let optionShuffleMidrings = optVals.getDataAsNumber(0x06FC88);
 	let optionStartWorld: number = optVals.getDataAsNumber(0x06FC83)+1;
+	let optionMinigameBandit = optVals.getDataAsBoolean(0x06FC8B, 0x01);
+	let optionMinigameBonus = optVals.getDataAsBoolean(0x06FC8B, 0x02);
+	
+	if(this.lastState.getGameOption(GameOptions.MinigameBandit) !== optionMinigameBandit)
+	  this.state.setGameOption(GameOptions.MinigameBandit,optionMinigameBandit);
+	this.lastState.setGameOption(GameOptions.MinigameBandit,optionMinigameBandit);
+	if(this.lastState.getGameOption(GameOptions.MinigameBonus) !== optionMinigameBonus)
+	  this.state.setGameOption(GameOptions.MinigameBonus,optionMinigameBonus);
+	this.lastState.setGameOption(GameOptions.MinigameBonus,optionMinigameBonus);
 	
 	let colVals = data.get("Collectables");
     this.setCollectable(CollectableTypes.Switch, colVals.getDataAsBoolean(0x00));
@@ -108,9 +123,9 @@ class MyAutotracker {
 	let goalVals: RomData = data.get("Goals");
 	for(let [id,lvl] of this.state.worldLevels) {
 	  let offset =  (lvl.world-1)*12+lvl.level-1;
-	  for(let i: number = 0; i<4; i++) {
-		let goal = lvl.goals[i];
-		if((!lvl.isBowserLevel())||goal.goalType != WorldGoalTypes.LevelClear) {
+	  for(let i: number = 0; i<5; i++) {
+		let goal = lvl.goals.get(possibleGoals[i]);
+		if(goal&&((!lvl.isBowserLevel())||goal.goalType != WorldGoalTypes.LevelClear)) {
 		  let targetValue : boolean = goalVals.getDataAsBoolean(offset, 1<<i);
 		  if(targetValue) {
 		    goal.setCompleted(targetValue);
@@ -120,12 +135,16 @@ class MyAutotracker {
 	}
 	let worldState: number = colVals.getDataAsNumber(0x20);
 	let extraLevelState: number = colVals.getDataAsNumber(0x21);
+	let bonusLevelState: number = colVals.getDataAsNumber(0x22);
 	for(let world=1; world<=6; world++) {
 	  if(!state.isWorldOpen(world)&&((worldState&(1<<(world-1)))!=0||world===optionStartWorld))
 	    state.setWorldOpen(world, true);
 	  let extraStage = state.worldLevels.get(world+"-E");
 	  if(extraStage.isLocked()&&(extraLevelState&(1<<(world-1)))!=0)
 	    extraStage.setLocked(false);
+	  let bonusStage = state.worldLevels.get(world+"-B");
+	  if(bonusStage.isLocked()&&(bonusLevelState&(1<<(world-1)))!=0)
+	    bonusStage.setLocked(false);
 	}
 	
 	/*let curNumber = Array.from(data.get("All").data);

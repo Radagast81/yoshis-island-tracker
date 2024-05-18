@@ -34,7 +34,8 @@ export const enum WorldGoalTypes {
 	RedCoins = "Red Coins",
 	Flowers = "Flowers",
 	Stars = "Stars",
-	LevelClear = "Level Clear"
+	LevelClear = "Level Clear",
+	Game = "Game"
 }
 export const enum BossTypes {
   Boss14 = "Burt The Bashful",
@@ -57,6 +58,10 @@ export const enum BowserCastleRouteTypes {
   Door3 = "Door3",
   Door4 = "Door4",
   DoorAll = "Gaunlet"
+}
+export const enum GameOptions {
+  MinigameBandit = "Minigame Bandit",
+  MinigameBonus = "Minigame Bonus"
 }
 
 export type EvaluationState = {
