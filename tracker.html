@@ -13,36 +13,8 @@
 		<meta http-equiv="Expires" content="0" />
 	</head>
 	<body style="background-color: black;" onLoad="initTrackerHTML()">
-		<div id="app" class="row app">
-			<div id="optionsoverlay">
-				<label class="dropdown">
-			      Difficulty:
-				  <select name="difficulty_dropdown" id="difficulty_dropdown" onchange="onDifficultyChanged()">
-					<option value="0">Easy</option>
-					<option value="1">Normal</option>
-					<option value="2">Hard</option>
-				  </select>
-				</label>
-				<label class="dropdown">
-			      Bowser Castle Route:
-				  <select name="bc_route_dropdown" id="bc_route_dropdown" onchange="onBowserCastleRouteChanged()">
-					<option value="Door Selectable">Selectable Door</option>
-					<option value="Door1">Fixed Door 1</option>
-					<option value="Door2">Fixed Door 2</option>
-					<option value="Door3">Fixed Door 3</option>
-					<option value="Door4">Fixed Door 4</option>
-					<option value="Gaunlet">Gaunlet (All Doors)</option>
-				  </select>
-				</label>
-				<label class="textField">
-			      Autotracker Port:
-				  <input class="textField" name="inputPort" id="inputPort" value="23074" type=number" size=13 onchange="onPortChanged()"></input>
-				</label>
-				<input type="checkbox" id="chkShowHardMode" name="chkShowHardMode" onchange="onShowHardModeChanged()">
-				<label for="chkShowHardMode">Show harder difficulty beatability</label>
-				<button id="btnResetLayout" onclick="resetCollectableList()">Reset Layout</button>
-			</div>
-			<div id="optionsoverlay2">
+		<div id="app" class="app main">
+			<div id="menuBar">
 				<label class="dropdown">
 			      Level search:
 				  <input class="textField" type="text" name="level" list="levelList" id="inputLevelSearch" onchange="doSearchLevel()">
@@ -51,10 +23,6 @@
 				</label>
 				<label id="levelSearchResult" class="littleDisplayField">
 				</label>
-				<input type="checkbox" id="chkBonusLevel" name="chkBonusLevel" onchange="onOptionBonusLevelChanged()">
-				<label for="chkBonusLevel">Bonus Level</label>
-				<input type="checkbox" id="chkBanditGames" name="chkBanditGames" onchange="onOptionBanditGamesChanged()">
-				<label for="chkBanditGames">Bandit games</label>
 			</div>
 			<div id="trackingoverlay" class="trackingArea"></div>
 		    <div id="worldoverlay" class="trackingArea"></div>
@@ -65,6 +33,74 @@
 			  </div>
 		      <div id="infooverlay" class="trackingArea infoBoxText">
 			  </div>
+			</div>
+		</div>
+		<div id="optionPanel" class="app options">
+			<div id="optionsoverlay">
+			    <h3>Tracker options:</h3>
+				<div id="trackerOptions" class="optionsGroup">
+					<label class="textField">
+					  Autotracker Port:
+					  <input class="textField" name="inputPort" id="inputPort" value="23074" type=number" size=13 onchange="onPortChanged()"/>
+					</label>
+					<br class="separate"/>
+					<input type="checkbox" id="chkShowHardMode" name="chkShowHardMode" onchange="onShowHardModeChanged()"/>
+					<label for="chkShowHardMode">Show harder difficulty beatability</label>
+					<br class="separate"/>
+					<button id="btnResetLayout" onclick="resetCollectableList()">Reset Layout</button>
+				</div>
+				<h3>Game options:</h3>
+				<div id="gameOptions" class="optionsGroup">
+					<label class="radiogroup">
+					  Goal:
+					  <br/>
+					  <input type="radio" id="rbnGoalBowser" name="rbnGoal" onchange="onGoalChanged()"/>
+					  <label for="rbnGoalBowser">Defeat Bowser</label>
+					  <br/>
+					  <input type="radio" id="rbnGoalLuigiPieces" name="rbnGoal" onchange="onGoalChanged()" checked/>
+					  <label for="rbnGoalLuigiPieces">Collect <input class="textFieldInline" name="inputLuigiPieces" id="inputLuigiPieces" type=number" size=3 min=1 max=100 onchange="onLuigiPiecesChanged()"/> Luigi Pieces</label>
+					</label>
+					<br class="separate"/>
+					<label class="dropdown">
+					  Difficulty:
+					  <select name="difficulty_dropdown" id="difficulty_dropdown" onchange="onDifficultyChanged()">
+						<option value="0">Easy</option>
+						<option value="1">Normal</option>
+						<option value="2">Hard</option>
+					  </select>
+					</label>
+					<br class="separate"/>
+					<input type="checkbox" id="chkExtraLevel" name="chkExtraLevel" onchange="onOptionExtraLevelChanged()">
+					<label for="chkExtraLevel">Extra Level</label>
+					<br/>
+					<input type="checkbox" id="chkBonusLevel" name="chkBonusLevel" onchange="onOptionBonusLevelChanged()">
+					<label for="chkBonusLevel">Bonus Level</label>
+					<br/>
+					<input type="checkbox" id="chkBanditGames" name="chkBanditGames" onchange="onOptionBanditGamesChanged()"/>
+					<label for="chkBanditGames">Bandit games</label>
+					<br class="separate"/>
+					<label class="dropdown">
+					  Bowser Castle Route:
+					  <select name="bc_route_dropdown" id="bc_route_dropdown" onchange="onBowserCastleRouteChanged()">
+						<option value="Door Selectable">Selectable Door</option>
+						<option value="Door1">Fixed Door 1</option>
+						<option value="Door2">Fixed Door 2</option>
+						<option value="Door3">Fixed Door 3</option>
+						<option value="Door4">Fixed Door 4</option>
+						<option value="Gaunlet">Gaunlet (All Doors)</option>
+					  </select>
+					</label>
+					<br class="separate"/>
+					<label class="textFieldInline">
+					  <input class="textFieldInline" name="inputCastleOpenCondition" id="inputCastleOpenCondition" type=number" size=2 min=0 max=11 onchange="onCastleOpenConditionChanged()"/>
+					  Bosses needed to enter Bowser's castle
+					</label>
+					<br class="separate"/>
+					<label class="textFieldInline">
+					  <input class="textFieldInline" name="inputCastleClearCondition" id="inputCastleClearCondition" type=number" size=2 min=0 max=11 onchange="onCastleOpenClearChanged()"/>
+					  Bosses needed to defeat Bowser
+					</label>
+				</div>
 			</div>
 		</div>
 	</body>

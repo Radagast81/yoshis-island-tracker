@@ -176,18 +176,6 @@ label.infoBoxLabel {
 div {
 	position: relative;
 }
-select {
-	display: table;
-}
-input.textField {
-	display: table;
-}
-
-button {
-	position: absolute;
-	right: 0px;
-	bottom: 0px;
-}
 a {
 	z-index:1;
 }
@@ -284,15 +272,39 @@ figure.worldIcon.noOpenGoals.castle{
 .Minigame-Bandit .worldGoals.col {
 	margin-bottom: 2px;
 }
-
 .level-10 {
 	display: none;
 }
-
 .Minigame-Bonus .isOpen .level-10 {
 	display: inline-block;
 }
 .littleDisplayField {
 	width: 40px;
 	display: inline-block;
+}
+div.app {
+	display: inline-block;
+	margin-top: 0px;
+	vertical-align: top;
+}
+.options {
+	height: 100vh;
+	z-index: 1;
+	border-left: solid 1px;
+	padding-left: 10px;
+}
+select {
+	display: table;
+}
+input.textField {
+	display: table;
+}
+div.optionsGroup {
+	margin-left: 30px;
+}
+div.optionsGroup br.separate {
+	margin-bottom: 10px;
+}
+.app.main {
+	padding-right: 10px;
 }
