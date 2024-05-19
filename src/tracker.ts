@@ -68,6 +68,14 @@ abstract class State {
   abstract addGameOptionChangeListener(listener: {(optionType: GameOptions, value: string|number|boolean): void }): number;
   abstract getGameOption(optionType:GameOptions): string|number|boolean;
   abstract setGameOption(optionType:GameOptions, value: string|number|boolean): void;
+  abstract addLuigiPiecesChangeListener(listener: {(value: number): void }): number;
+  abstract getLuigiPieces(): number;
+  abstract setLuigiPieces(value: number): void;
+  abstract addSummaryChangeListener(listener: {(checksCompleted: number, checksTotal: number, bossesCompleted: number, bossesTotal: number): void }): number;
+  abstract getChecksTotal(): number;
+  abstract getChecksCompleted(): number;
+  abstract getBossesTotal(): number;
+  abstract getBossesCompleted(): number;
 }
 abstract class Autotracker {
   abstract addConnectionStatusListener(listener: {(connectionStatus: string): void }): number;
@@ -293,6 +301,11 @@ function setupMenuInHTML() : void {
   
   state.addGameOptionChangeListener((optionType, value) => notifyGameOptionChanged(optionType, value));
   copyGameOptions2State();
+  
+  state.addLuigiPiecesChangeListener((value) => notifyLuigiPiecesChanged(value));
+  notifyLuigiPiecesChanged(state.getLuigiPieces());
+  state.addSummaryChangeListener((checksCompleted, checksTotal, bossesCompleted, bossesTotal)=>notifySummaryChanged(checksCompleted, checksTotal, bossesCompleted, bossesTotal));
+  notifySummaryChanged(state.getChecksCompleted(), state.getChecksTotal(), state.getBossesCompleted(), state.getBossesTotal());
 }
 function copyGameOptions2State(): void {
   document.querySelectorAll("[gameOption]").forEach((element)=> {
@@ -703,6 +716,9 @@ function onInputElementChanged(element: HTMLInputElement) {
 	    state.setGameOption(gameOption, <boolean>element.checked);
 	  } else if(element.getAttribute("type")==="number") {
 	    state.setGameOption(gameOption, parseInt(element.value));
+	  } else if(element.getAttribute("type")==="radio") {
+	    if(element.checked)
+	      state.setGameOption(gameOption, element.value);
 	  } else {
 	    state.setGameOption(gameOption, element.value);
 	  }
@@ -710,12 +726,52 @@ function onInputElementChanged(element: HTMLInputElement) {
 }
 
 function notifyGameOptionChanged(optionType: GameOptions, value: string|number|boolean) {
+  let mainElement = <HTMLElement>document.getElementById("app");
   if(GameOptions.MinigameBonus === optionType||GameOptions.MinigameBandit=== optionType||GameOptions.ExtraLevel === optionType) {
-    let mainElement = <HTMLElement>document.getElementById("app");
 	mainElement.classList.toggle(optionType.replace(" ","-"), <boolean>value);
 	let checkBox = <HTMLInputElement>document.querySelector("[gameOption='"+optionType+"']");
 	if(checkBox&&checkBox.checked !== value)
 	    checkBox.checked = <boolean>value;
 	updateAllLevelState();
+  } else if(GameOptions.LuigiPiecesRequired === optionType||GameOptions.BowserCastleEnter === optionType||GameOptions.BowserCastleClear === optionType) {
+	let input = <HTMLInputElement>document.querySelector("[gameOption='"+optionType+"']");
+	if(input&&input.value != value.toString()) 
+	  input.value = value.toString();
+	if(GameOptions.LuigiPiecesRequired === optionType) {
+	  let displaySummary = <HTMLElement>document.getElementById("dspLuigiPiecesRequired");
+	  if(displaySummary)
+	    displaySummary.textContent=" / "+value;
+	}
+  } else if(GameOptions.Goal === optionType) {
+      let goalBowser = value === "0";
+	  let input = <HTMLInputElement>document.getElementById(goalBowser?"rbnGoalBowser":"rbnGoalLuigiPieces");
+	  if(input&&!input.checked)
+	    input.checked = true;
+	  mainElement.classList.toggle("goal-Bowser", goalBowser);
+	  mainElement.classList.toggle("goal-Luigi-Pieces", !goalBowser);
+  } else {
+    console.log(optionType+" => "+value);
   }
+}
+
+function onLuigiPiecesChanged(element: HTMLInputElement) {
+  state.setLuigiPieces(parseInt(element.value));
+}
+
+function notifyLuigiPiecesChanged(value: number) {
+  let textField: HTMLInputElement = <HTMLInputElement>document.getElementById("inputLuigiPieces");
+  if(textField)
+    textField.value = value.toString();
+}
+
+function notifySummaryChanged(checksCompleted: number, checksTotal: number, bossesCompleted: number, bossesTotal: number): void {
+	let displaySummaryChecks = document.getElementById("summaryChecks");
+	let displaySummaryBosses = document.getElementById("summaryBosses");
+	displaySummaryChecks.textContent = checksCompleted + " / " + checksTotal;
+	displaySummaryBosses.textContent = bossesCompleted + " / " + bossesTotal;
+}
+
+function toggleOptionMenu() {
+  let mainElement = <HTMLElement>document.getElementById("optionPanel");
+  mainElement.classList.toggle("HideOptions");
 }

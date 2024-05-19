@@ -60,9 +60,15 @@ export const enum BowserCastleRouteTypes {
   DoorAll = "Gaunlet"
 }
 export const enum GameOptions {
+  Goal = "Goal",
+  LuigiPiecesRequired = "Luigi Pieces Required",
+  Difficulty = "Difficulty",
   ExtraLevel = "Extra Level",
   MinigameBandit = "Minigame Bandit",
-  MinigameBonus = "Minigame Bonus"
+  MinigameBonus = "Minigame Bonus",
+  BowserCastleRoute = "BowserCastleRoute",
+  BowserCastleEnter = "BowserCastleEnter",
+  BowserCastleClear = "BowserCastleClear"
 }
 
 export type EvaluationState = {

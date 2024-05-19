@@ -13,6 +13,8 @@ abstract class State {
   abstract setWorldOpen(world:number, isOpen: boolean): void;
   abstract getGameOption(optionType:GameOptions): string|number|boolean;
   abstract setGameOption(optionType:GameOptions, value: string|number|boolean): void;
+  abstract getLuigiPieces(): number;
+  abstract setLuigiPieces(value: number): void;
 }
 abstract class Collectable {
   readonly collectableType: CollectableTypes;;
@@ -55,6 +57,7 @@ class MyAutotracker {
     this.sniClient.addDataSource("Options", 0x06FC80, 0X0040);
     this.sniClient.addDataSource("Collectables", 0x00, 0x0040, WRAM_START+0x1440);
     this.sniClient.addDataSource("Goals", 0x00, 0X0100, WRAM_START+0x146D);
+    this.sniClient.addDataSource("LuigiPieces", 0x00, 0X0001, WRAM_START+0x14B5);
 	
     //this.sniClient.addDataSource("All", 0x00, 0x2000, WRAM_START);
 	
@@ -86,6 +89,10 @@ class MyAutotracker {
 	let optionStartWorld: number = optVals.getDataAsNumber(0x06FC83)+1;	
 	this.setStateOptionIfChanged(GameOptions.MinigameBandit, optVals.getDataAsBoolean(0x06FC8B, 0x01));
 	this.setStateOptionIfChanged(GameOptions.MinigameBonus, optVals.getDataAsBoolean(0x06FC8B, 0x02));
+	this.setStateOptionIfChanged(GameOptions.Goal, optVals.getDataAsNumber(0x06FC9A).toString());
+	this.setStateOptionIfChanged(GameOptions.LuigiPiecesRequired, optVals.getDataAsNumber(0x06FC99));
+	this.setStateOptionIfChanged(GameOptions.BowserCastleEnter, optVals.getDataAsNumber(0x06FC85));
+	this.setStateOptionIfChanged(GameOptions.BowserCastleClear, optVals.getDataAsNumber(0x06FC86));
 	
 	let colVals = data.get("Collectables");
     this.setCollectable(CollectableTypes.Switch, colVals.getDataAsBoolean(0x00));
@@ -145,6 +152,11 @@ class MyAutotracker {
 	  if(bonusStage.isLocked()&&(bonusLevelState&(1<<(world-1)))!=0)
 	    bonusStage.setLocked(false);
 	}
+	
+	let luigiPieces: number = data.get("LuigiPieces").getDataAsNumber(0);
+	if(this.lastState.getLuigiPieces() !== luigiPieces)
+	  this.state.setLuigiPieces(luigiPieces);
+	this.lastState.setLuigiPieces(luigiPieces);
 	
 	/*let curNumber = Array.from(data.get("All").data);
 	

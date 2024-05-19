@@ -23,6 +23,22 @@
 				</label>
 				<label id="levelSearchResult" class="littleDisplayField">
 				</label>
+				<img id="imgOptionMenu" class="optionToggle" src="./images/options.png" title="Show/Hide options" onclick="toggleOptionMenu()"/>
+				<label id="labelSummaryChecks" class="summary">
+				  Checks:
+				  <div id="summaryChecks" class="summary"></div>
+				</label>
+				<label id="labelSummaryBosses" class="summary">
+				  Bosses defeated:
+				  <div id="summaryBosses" class="summary"></div>
+				</label>
+				<label id="labelSummaryLuigiPieces" class="summary LuigiPieces">
+				  Luigi Pieces:
+				  <div class="summary LuigiPieces">
+				    <input class="textFieldInline" type="number" size=5 value=25 min=1 max=100 name="inputLuigiPieces" id="inputLuigiPieces" onchange="onLuigiPiecesChanged(this)" />
+					<div id="dspLuigiPiecesRequired" class="summaryInline"></div>
+				  </div>
+				</label>
 			</div>
 			<div id="trackingoverlay" class="trackingArea"></div>
 		    <div id="worldoverlay" class="trackingArea"></div>
@@ -35,7 +51,7 @@
 			  </div>
 			</div>
 		</div>
-		<div id="optionPanel" class="app options">
+		<div id="optionPanel" class="app options HideOptions">
 			<div id="optionsoverlay">
 			    <h3>Tracker options:</h3>
 				<div id="trackerOptions" class="optionsGroup">
@@ -54,11 +70,11 @@
 					<label class="radiogroup">
 					  Goal:
 					  <br/>
-					  <input type="radio" id="rbnGoalBowser" name="rbnGoal" onchange="onGoalChanged()"/>
+					  <input type="radio" id="rbnGoalBowser" name="rbnGoal" onchange="onInputElementChanged(this)" gameOption="Goal" value=0 />
 					  <label for="rbnGoalBowser">Defeat Bowser</label>
 					  <br/>
-					  <input type="radio" id="rbnGoalLuigiPieces" name="rbnGoal" onchange="onGoalChanged()" checked/>
-					  <label for="rbnGoalLuigiPieces">Collect <input class="textFieldInline" name="inputLuigiPieces" id="inputLuigiPieces" type="number" size=5 value=25 min=1 max=100 onchange="onLuigiPiecesChanged()"/> Luigi Pieces</label>
+					  <input type="radio" id="rbnGoalLuigiPieces" name="rbnGoal" onchange="onInputElementChanged(this)" gameOption="Goal" value=1 checked/>
+					  <label for="rbnGoalLuigiPieces">Collect <input class="textFieldInline" name="inputOptionLuigiPieces" id="inputOptionLuigiPieces" type="number" size=5 value=25 min=1 max=100 onchange="onInputElementChanged(this)" gameOption="Luigi Pieces Required"/> Luigi Pieces</label>
 					</label>
 					<br class="separate"/>
 					<label class="dropdown">
@@ -92,12 +108,12 @@
 					</label>
 					<br class="separate"/>
 					<label class="textFieldInline">
-					  <input class="textFieldInline" name="inputCastleOpenCondition" id="inputCastleOpenCondition" type="number" size=4 min=0 max=11 value=5 onchange="onCastleOpenConditionChanged()"/>
+					  <input class="textFieldInline" name="inputCastleOpenCondition" id="inputCastleOpenCondition" type="number" size=4 min=0 max=11 value=5 onchange="onInputElementChanged(this)" gameOption="BowserCastleEnter"/>
 					  Bosses needed to enter Bowser's castle
 					</label>
 					<br class="separate"/>
 					<label class="textFieldInline">
-					  <input class="textFieldInline" name="inputCastleClearCondition" id="inputCastleClearCondition" type="number" size=4 min=0 max=11 value=0 onchange="onCastleOpenClearChanged()"/>
+					  <input class="textFieldInline" name="inputCastleClearCondition" id="inputCastleClearCondition" type="number" size=4 min=0 max=11 value=0 onchange="onInputElementChanged(this)" gameOption="BowserCastleClear"/>
 					  Bosses needed to defeat Bowser
 					</label>
 				</div>

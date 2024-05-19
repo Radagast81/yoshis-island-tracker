@@ -28,6 +28,7 @@ a {
 }
 .trackingArea {
    display: table;
+   width: 100%;
 }
 .cell {
    display: inline-block;
@@ -299,6 +300,12 @@ div.app {
 	border-left: solid 1px;
 	padding-left: 10px;
 }
+label.summary {
+	display: inline-block;
+	vertical-align: top;
+	float: right;
+	margin-left: 20px;
+}
 select {
 	display: table;
 }
@@ -312,5 +319,36 @@ div.optionsGroup br.separate {
 	margin-bottom: 10px;
 }
 .app.main {
+	display: inline-block;
 	padding-right: 10px;
+}
+div.summary {
+	margin: 0px;
+}
+div.summaryInline {
+	display: inline-block;
+	margin: 0px;
+}
+input.summary {
+	display: inline-block;
+}
+.summaryInline {
+	display: inline-block;
+}
+label.summary.LuigiPieces {
+	display: none;
+}
+.goal-Luigi-Pieces label.summary.LuigiPieces {
+	display: inline-block;
+}
+div.summary:not(.LuigiPieces) {
+	margin-top: 3px;
+}
+img.optionToggle {
+	float: right;
+	width: 38px;
+	margin-left: 20px;
+}
+.options.HideOptions {
+	display: none;
 }

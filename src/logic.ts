@@ -271,7 +271,7 @@ class WorldGoal {
   }
   isActive(): boolean {
     return this.level.isActive() &&
-	  (this.goalType != WorldGoalTypes.Game || <boolean>state.getGameOption(GameOptions.MinigameBandit));
+	  (this.goalType != WorldGoalTypes.Game || <boolean>state.getGameOption(GameOptions.MinigameBandit)|| this.level.level===10);
   }
 }
 
@@ -352,8 +352,22 @@ class State {
   readonly bowserCastleRoutes: Map<BowserCastleRouteTypes, BowserCastleRoute> = new Map<BowserCastleRouteTypes, BowserCastleRoute>();
   readonly worldOpen: Map<number, boolean> = new Map<number, boolean>();
   readonly gameOptions: Map<GameOptions, string|number|boolean> = new Map<GameOptions, string|number|boolean>();
+  private luigiPieces: number = 0;
+  private checksTotal: number = 0;
+  private checksCompleted: number = 0;
+  private bossesTotal: number = 0;
+  private bossesCompleted: number = 0;
   private worldOpenChangeListener: {(world: number, isOpen: boolean): void }[] = [];
   private gameOptionChangeListener: {(optionType: GameOptions, value: string|number|boolean): void }[] = [];
+  private luigiPiecesChangeListener: {(value: number): void }[] = [];
+  private summaryChangeListener: {(checksCompleted: number, checksTotal: number, bossesCompleted: number, bossesTotal: number): void }[] = [];
+  
+  private createGoal(level: WorldLevel, goalType: WorldGoalTypes) {
+	  let goal = new WorldGoal(level, goalType);
+	  goal.addDataChangeListener((g) => this.calculateSummaries());
+	  level.goals.set(goal.goalType, goal);
+	  this.worldGoals.set(goal.getId(), goal);
+  }
   
   constructor() {
     for(let c of allCollectables) {
@@ -375,14 +389,10 @@ class State {
 		this.worldLevels.set(level.getId(), level);
 		if(l<10)
 			for(let g of allGoals) {
-			  let goal = new WorldGoal(level, g);
-			  level.goals.set(goal.goalType, goal);
-			  this.worldGoals.set(goal.getId(), goal);
+			  this.createGoal(level, g);
 			}
 		if(l===10||gameLevels.includes(level.getId())) {
-		  let goal = new WorldGoal(level, WorldGoalTypes.Game);
-		  level.goals.set(goal.goalType, goal);
-		  this.worldGoals.set(goal.getId(), goal);
+		  this.createGoal(level, WorldGoalTypes.Game);
 		}
 	  }
 	}
@@ -424,8 +434,11 @@ class State {
   setGameOption(optionType:GameOptions, value: string|number|boolean) {
     let changed = this.getGameOption(optionType)!== value;
 	this.gameOptions.set(optionType, value);
-	if(changed)
+	if(changed) {
 	  this.gameOptionChangeListener.filter(listener=>listener).forEach(listener=>listener(optionType, value));
+	  if(GameOptions.MinigameBandit===optionType||GameOptions.MinigameBonus===optionType||GameOptions.ExtraLevel===optionType)
+	    this.calculateSummaries();
+	}
   }
   
   addGameOptionChangeListener(listener: {(optionType: GameOptions, value: string|number|boolean): void }): number {
@@ -435,6 +448,74 @@ class State {
   removeGameOptionChangeListener(index: number) : void {
     this.gameOptionChangeListener[index] = null;
   }
+  
+  getLuigiPieces(): number {
+    return this.luigiPieces;
+  }
+  
+  setLuigiPieces(value: number): void {
+    let changed = this.luigiPieces!== value;
+	this.luigiPieces = value;
+	if(changed)
+	  this.luigiPiecesChangeListener.filter(listener=>listener).forEach(listener=>listener(value));
+  }
+  
+  addLuigiPiecesChangeListener(listener: {(value: number): void }): number {
+    return this.luigiPiecesChangeListener.push(listener) - 1;
+  }
+  
+  removeLuigiPiecesChangeListener(index: number) : void {
+    this.luigiPiecesChangeListener[index] = null;
+  }
+  private calculateSummaries(): void {
+	let checksTotal: number = 0;
+	let checksCompleted: number = 0;
+	let bossesTotal: number = 0;
+	let bossesCompleted: number = 0;
+	for(let [id, goal] of this.worldGoals.entries()) {
+	  if(goal.isActive()) {
+	    checksTotal++;
+	    if(goal.isCompleted())
+	      checksCompleted++;
+	      if(goal.goalType===WorldGoalTypes.LevelClear&&goal.level.isBossLevel()&&!goal.level.isBowserLevel()) {
+	  	    bossesTotal++;
+	  	    if(goal.isCompleted())
+	  	      bossesCompleted++;
+	      }
+	  }
+	}
+	let changed: boolean = checksTotal     != this.checksTotal
+	                    || checksCompleted != this.checksCompleted
+	                    || bossesTotal     != this.bossesTotal
+	                    || bossesCompleted != this.bossesCompleted;
+    
+	this.checksTotal     = checksTotal;
+	this.checksCompleted = checksCompleted;
+	this.bossesTotal     = bossesTotal;
+	this.bossesCompleted = bossesCompleted;
+	if(changed)
+	  this.summaryChangeListener.filter(listener=>listener).forEach(listener=>listener(checksCompleted, checksTotal, bossesCompleted, bossesTotal));
+  }
+  addSummaryChangeListener(listener: {(checksCompleted: number, checksTotal: number, bossesCompleted: number, bossesTotal: number): void }): number {
+    return this.summaryChangeListener.push(listener) - 1;
+  }
+  
+  removeSummaryChangeListener(index: number) : void {
+    this.summaryChangeListener[index] = null;
+  }
+  getChecksTotal(): number {
+    return this.checksTotal;
+  }
+  getChecksCompleted(): number {
+    return this.checksCompleted;
+  }
+  getBossesTotal(): number {
+    return this.bossesTotal;
+  }
+  getBossesCompleted(): number {
+    return this.bossesCompleted;
+  }
 }
 var state : State = new State();
 var lastState : State = new State();
+
