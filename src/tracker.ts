@@ -292,10 +292,15 @@ function setupMenuInHTML() : void {
   doSearchLevel();
   
   state.addGameOptionChangeListener((optionType, value) => notifyGameOptionChanged(optionType, value));
-  onOptionBonusLevelChanged(); 
-  onOptionBanditGamesChanged();
+  copyGameOptions2State();
 }
-
+function copyGameOptions2State(): void {
+  document.querySelectorAll("[gameOption]").forEach((element)=> {
+    if(element instanceof HTMLInputElement) {
+	  onInputElementChanged(element);
+	}
+  });
+}
 function setupCollectablesInHTML() : void {
   let trackerNode = document.getElementById("trackingoverlay");
   let rowElement : HTMLDivElement;
@@ -430,7 +435,7 @@ function setupWorldsInHTML() : void {
 		// Goals
 		if (world.level<10 ) {
 			let goalsCol = Object.assign(document.createElement("div"), {
-			  className: "worldGoals col"
+			  className: "worldGoals col level-"+world.level
 			});
 			for(let [goalId, goal] of world.goals.entries()) {
 			  let goalsCell = Object.assign(document.createElement("div"), {
@@ -691,29 +696,26 @@ function doSearchLevel() {
   resultField.textContent = result;
 }
 
-function onOptionBonusLevelChanged(): void {
-  let checkBoxOptionBonusLevel = <HTMLInputElement>document.getElementById("chkBonusLevel");
-  state.setGameOption(GameOptions.MinigameBonus, checkBoxOptionBonusLevel.checked);
-}
-
-function onOptionBanditGamesChanged(): void {
-  let checkBoxOptionBanditGames = <HTMLInputElement>document.getElementById("chkBanditGames");
-  state.setGameOption(GameOptions.MinigameBandit, checkBoxOptionBanditGames.checked);
+function onInputElementChanged(element: HTMLInputElement) {
+  let gameOption = <GameOptions>element.getAttribute("gameOption");
+  if(gameOption) {
+	  if(element.getAttribute("type")==="checkbox") {
+	    state.setGameOption(gameOption, <boolean>element.checked);
+	  } else if(element.getAttribute("type")==="number") {
+	    state.setGameOption(gameOption, parseInt(element.value));
+	  } else {
+	    state.setGameOption(gameOption, element.value);
+	  }
+  }
 }
 
 function notifyGameOptionChanged(optionType: GameOptions, value: string|number|boolean) {
-  if(GameOptions.MinigameBonus === optionType||GameOptions.MinigameBandit=== optionType) {
+  if(GameOptions.MinigameBonus === optionType||GameOptions.MinigameBandit=== optionType||GameOptions.ExtraLevel === optionType) {
     let mainElement = <HTMLElement>document.getElementById("app");
 	mainElement.classList.toggle(optionType.replace(" ","-"), <boolean>value);
-	if(GameOptions.MinigameBonus === optionType) {
-      let checkBoxOptionBonusLevel = <HTMLInputElement>document.getElementById("chkBonusLevel");
-	  if(checkBoxOptionBonusLevel.checked !== value)
-	    checkBoxOptionBonusLevel.checked = <boolean>value;
-	} else if(GameOptions.MinigameBandit === optionType) {
-      let checkBoxOptionBanditGames = <HTMLInputElement>document.getElementById("chkBanditGames");
-	  if(checkBoxOptionBanditGames.checked !== value)
-	    checkBoxOptionBanditGames.checked = <boolean>value;
-	}
+	let checkBox = <HTMLInputElement>document.querySelector("[gameOption='"+optionType+"']");
+	if(checkBox&&checkBox.checked !== value)
+	    checkBox.checked = <boolean>value;
 	updateAllLevelState();
   }
 }

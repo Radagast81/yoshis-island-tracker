@@ -195,6 +195,11 @@ class WorldLevel {
   toggleLocked(): void {
     this.setLocked(!this.locked);
   }
+  isActive(): boolean {
+    return this.level < 9 ||
+	  (this.level == 9 && <boolean>state.getGameOption(GameOptions.ExtraLevel)) ||
+	  (this.level == 10 && <boolean>state.getGameOption(GameOptions.MinigameBonus));
+  }
 }
 
 class WorldGoal {
@@ -263,6 +268,10 @@ class WorldGoal {
 	    return false;
 	}
 	return true;
+  }
+  isActive(): boolean {
+    return this.level.isActive() &&
+	  (this.goalType != WorldGoalTypes.Game || <boolean>state.getGameOption(GameOptions.MinigameBandit));
   }
 }
 
@@ -384,8 +393,8 @@ class State {
   getLevel(world: number, level: number) : WorldLevel {
     return this.worldLevels.get(calcWorldId(world, level));
   }
-  getGoal(world: number, level: number, goaltype: WorldGoalTypes) : WorldGoal {
-    return this.getLevel(world, level)?.getGoal(goaltype);
+  getGoal(world: number, level: number, goalType: WorldGoalTypes) : WorldGoal {
+    return this.getLevel(world, level)?.getGoal(goalType);
   }
   
   isWorldOpen(world:number) {

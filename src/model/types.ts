@@ -60,6 +60,7 @@ export const enum BowserCastleRouteTypes {
   DoorAll = "Gaunlet"
 }
 export const enum GameOptions {
+  ExtraLevel = "Extra Level",
   MinigameBandit = "Minigame Bandit",
   MinigameBonus = "Minigame Bonus"
 }

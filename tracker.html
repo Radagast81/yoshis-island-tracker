@@ -41,7 +41,7 @@
 				<div id="trackerOptions" class="optionsGroup">
 					<label class="textField">
 					  Autotracker Port:
-					  <input class="textField" name="inputPort" id="inputPort" value="23074" type=number" size=13 onchange="onPortChanged()"/>
+					  <input class="textField" name="inputPort" id="inputPort" value="23074" type="number" size=13 onchange="onPortChanged()"/>
 					</label>
 					<br class="separate"/>
 					<input type="checkbox" id="chkShowHardMode" name="chkShowHardMode" onchange="onShowHardModeChanged()"/>
@@ -58,7 +58,7 @@
 					  <label for="rbnGoalBowser">Defeat Bowser</label>
 					  <br/>
 					  <input type="radio" id="rbnGoalLuigiPieces" name="rbnGoal" onchange="onGoalChanged()" checked/>
-					  <label for="rbnGoalLuigiPieces">Collect <input class="textFieldInline" name="inputLuigiPieces" id="inputLuigiPieces" type=number" size=3 min=1 max=100 onchange="onLuigiPiecesChanged()"/> Luigi Pieces</label>
+					  <label for="rbnGoalLuigiPieces">Collect <input class="textFieldInline" name="inputLuigiPieces" id="inputLuigiPieces" type="number" size=5 value=25 min=1 max=100 onchange="onLuigiPiecesChanged()"/> Luigi Pieces</label>
 					</label>
 					<br class="separate"/>
 					<label class="dropdown">
@@ -70,13 +70,13 @@
 					  </select>
 					</label>
 					<br class="separate"/>
-					<input type="checkbox" id="chkExtraLevel" name="chkExtraLevel" onchange="onOptionExtraLevelChanged()">
+					<input type="checkbox" id="chkExtraLevel" name="chkExtraLevel" onchange="onInputElementChanged(this)" gameOption="Extra Level" checked>
 					<label for="chkExtraLevel">Extra Level</label>
 					<br/>
-					<input type="checkbox" id="chkBonusLevel" name="chkBonusLevel" onchange="onOptionBonusLevelChanged()">
+					<input type="checkbox" id="chkBonusLevel" name="chkBonusLevel" onchange="onInputElementChanged(this)" gameOption="Minigame Bonus">
 					<label for="chkBonusLevel">Bonus Level</label>
 					<br/>
-					<input type="checkbox" id="chkBanditGames" name="chkBanditGames" onchange="onOptionBanditGamesChanged()"/>
+					<input type="checkbox" id="chkBanditGames" name="chkBanditGames" onchange="onInputElementChanged(this)" gameOption="Minigame Bandit"/>
 					<label for="chkBanditGames">Bandit games</label>
 					<br class="separate"/>
 					<label class="dropdown">
@@ -92,12 +92,12 @@
 					</label>
 					<br class="separate"/>
 					<label class="textFieldInline">
-					  <input class="textFieldInline" name="inputCastleOpenCondition" id="inputCastleOpenCondition" type=number" size=2 min=0 max=11 onchange="onCastleOpenConditionChanged()"/>
+					  <input class="textFieldInline" name="inputCastleOpenCondition" id="inputCastleOpenCondition" type="number" size=4 min=0 max=11 value=5 onchange="onCastleOpenConditionChanged()"/>
 					  Bosses needed to enter Bowser's castle
 					</label>
 					<br class="separate"/>
 					<label class="textFieldInline">
-					  <input class="textFieldInline" name="inputCastleClearCondition" id="inputCastleClearCondition" type=number" size=2 min=0 max=11 onchange="onCastleOpenClearChanged()"/>
+					  <input class="textFieldInline" name="inputCastleClearCondition" id="inputCastleClearCondition" type="number" size=4 min=0 max=11 value=0 onchange="onCastleOpenClearChanged()"/>
 					  Bosses needed to defeat Bowser
 					</label>
 				</div>

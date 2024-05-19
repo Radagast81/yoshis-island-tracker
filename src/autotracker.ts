@@ -74,19 +74,18 @@ class MyAutotracker {
 	if(<number>collectable.getValue()<value)
 	  collectable.setValue(value);
   }
+  private setStateOptionIfChanged(gameOption: GameOptions, value: string|number|boolean) : void {
+	if(this.lastState.getGameOption(gameOption) !== value)
+	  this.state.setGameOption(gameOption,value);
+	this.lastState.setGameOption(gameOption,value);
+    
+  }
   private notifyDataChanged(data: Map<string, RomData>) {
     let optVals: RomData = data.get("Options");
 	let optionShuffleMidrings = optVals.getDataAsNumber(0x06FC88);
-	let optionStartWorld: number = optVals.getDataAsNumber(0x06FC83)+1;
-	let optionMinigameBandit = optVals.getDataAsBoolean(0x06FC8B, 0x01);
-	let optionMinigameBonus = optVals.getDataAsBoolean(0x06FC8B, 0x02);
-	
-	if(this.lastState.getGameOption(GameOptions.MinigameBandit) !== optionMinigameBandit)
-	  this.state.setGameOption(GameOptions.MinigameBandit,optionMinigameBandit);
-	this.lastState.setGameOption(GameOptions.MinigameBandit,optionMinigameBandit);
-	if(this.lastState.getGameOption(GameOptions.MinigameBonus) !== optionMinigameBonus)
-	  this.state.setGameOption(GameOptions.MinigameBonus,optionMinigameBonus);
-	this.lastState.setGameOption(GameOptions.MinigameBonus,optionMinigameBonus);
+	let optionStartWorld: number = optVals.getDataAsNumber(0x06FC83)+1;	
+	this.setStateOptionIfChanged(GameOptions.MinigameBandit, optVals.getDataAsBoolean(0x06FC8B, 0x01));
+	this.setStateOptionIfChanged(GameOptions.MinigameBonus, optVals.getDataAsBoolean(0x06FC8B, 0x02));
 	
 	let colVals = data.get("Collectables");
     this.setCollectable(CollectableTypes.Switch, colVals.getDataAsBoolean(0x00));

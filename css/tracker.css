@@ -278,6 +278,12 @@ figure.worldIcon.noOpenGoals.castle{
 .Minigame-Bonus .isOpen .level-10 {
 	display: inline-block;
 }
+.level-9 {
+	display: none;
+}
+.Extra-Level .isOpen .level-9 {
+	display: inline-block;
+}
 .littleDisplayField {
 	width: 40px;
 	display: inline-block;
