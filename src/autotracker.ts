@@ -146,8 +146,10 @@ class MyAutotracker {
 	  if(!state.isWorldOpen(world)&&((worldState&(1<<(world-1)))!=0||world===optionStartWorld))
 	    state.setWorldOpen(world, true);
 	  let extraStage = state.worldLevels.get(world+"-E");
-	  if(extraStage.isLocked()&&(extraLevelState&(1<<(world-1)))!=0)
+	  if(extraStage.isLocked()&&(extraLevelState&(1<<(world-1)))!=0) {
 	    extraStage.setLocked(false);
+		this.setStateOptionIfChanged(GameOptions.ExtraLevel, true);
+	  }
 	  let bonusStage = state.worldLevels.get(world+"-B");
 	  if(bonusStage.isLocked()&&(bonusLevelState&(1<<(world-1)))!=0)
 	    bonusStage.setLocked(false);
