@@ -213,6 +213,13 @@ function updateWorldGoalState(goal: WorldGoal) {
 	goal.htmlImage.src = imgPath + goal.goalType + "_unchecked.png";
 	goal.htmlImage.classList.toggle("completed", false);
 	goal.htmlImage.classList.toggle("blocked", true);  
+  } else if(goal.level.isBowserLevel() &&
+      (state.getBossesCompleted() < <number>state.getGameOption(GameOptions.BowserCastleEnter) ||
+	  (state.getBossesCompleted() < <number>state.getGameOption(GameOptions.BowserCastleClear) && goal.goalType === WorldGoalTypes.LevelClear))) 
+  {
+	goal.htmlImage.src = imgPath + goal.goalType + "_unchecked.png";
+	goal.htmlImage.classList.toggle("completed", false);
+	goal.htmlImage.classList.toggle("blocked", true);  
   } else {
 	goal.htmlImage.src = imgPath + goal.goalType + "_unchecked.png";
     
@@ -769,6 +776,10 @@ function notifySummaryChanged(checksCompleted: number, checksTotal: number, boss
 	let displaySummaryBosses = document.getElementById("summaryBosses");
 	displaySummaryChecks.textContent = checksCompleted + " / " + checksTotal;
 	displaySummaryBosses.textContent = bossesCompleted + " / " + bossesTotal;
+	let bowserLevel = state.worldLevels.get("6-8");
+	for (let [goalId, goal] of bowserLevel.goals) {
+	  updateWorldGoalState(goal);
+	}
 }
 
 function toggleOptionMenu() {
