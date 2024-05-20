@@ -602,6 +602,15 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
 			}));
 	});
   }
+  if(goal.level.isBowserLevel()) {
+	let displaySummaryBosses: HTMLElement = document.getElementById("summaryBosses");
+      (state.getBossesCompleted() >= <number>state.getGameOption(GameOptions.BowserCastleEnter) &&
+	  (state.getBossesCompleted() >= <number>state.getGameOption(GameOptions.BowserCastleClear) || goal.goalType !== WorldGoalTypes.LevelClear));
+	displaySummaryBosses.classList.toggle("isNeeded", true);
+    displaySummaryBosses.classList.toggle("isCollected", 
+      (state.getBossesCompleted() >= <number>state.getGameOption(GameOptions.BowserCastleEnter) &&
+	  (state.getBossesCompleted() >= <number>state.getGameOption(GameOptions.BowserCastleClear) || goal.goalType !== WorldGoalTypes.LevelClear)));
+  }
 }
 function setInfoBoxText(s: string) {
   let infoBox = document.getElementById("infooverlay");
@@ -626,6 +635,9 @@ function clearGoalRequirementsHighlights() {
 	   collectable.htmlImage.classList.remove("isNeeded","hasSubstitute","isCollected");
 	   collectable.htmlImageSubstitute.classList.remove("hasSubstitute");
 	 });
+	 let displaySummaryBosses: HTMLElement = document.getElementById("summaryBosses");
+	 displaySummaryBosses.classList.toggle("isNeeded", false);
+	 displaySummaryBosses.classList.toggle("isCollected", false);
 	 isGoalRequirementsHighlighted = false; 
 	 resetLogicInfobox();
   }
@@ -733,7 +745,7 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
 	  let displaySummary = <HTMLElement>document.getElementById("dspLuigiPiecesRequired");
 	  if(displaySummary)
 	    displaySummary.textContent=" / "+value;
-	}
+	} 
   } else if(GameOptions.Goal === optionType) {
       let goalBowser = value === "0";
 	  let input = <HTMLInputElement>document.getElementById(goalBowser?"rbnGoalBowser":"rbnGoalLuigiPieces");
@@ -741,6 +753,10 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
 	    input.checked = true;
 	  mainElement.classList.toggle("goal-Bowser", goalBowser);
 	  mainElement.classList.toggle("goal-Luigi-Pieces", !goalBowser);
+	  if(!goalBowser)
+	    state.setGameOption(GameOptions.BowserCastleClear, 255);
+	  let bowserClearElement = <HTMLInputElement>document.querySelector("[gameOption='"+GameOptions.BowserCastleClear+"']");
+	  bowserClearElement.disabled = !goalBowser;
   } else if(GameOptions.BowserCastleRoute === optionType) {
 	  let input = <HTMLInputElement>document.querySelector("[gameOption='"+optionType+"']");
 	  if(input&&input.value !== value) 

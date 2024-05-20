@@ -37,13 +37,13 @@ a {
    display: inline-block;
    margin: 0px;
 }
-.collectable.isNeeded {
+.isNeeded {
 	background-color: darkred;
 }
-.collectable.isNeeded.isCollected {
+.isNeeded.isCollected {
 	background-color: darkgreen;
 }
-.collectable.isNeeded.hasSubstitute {
+.isNeeded.hasSubstitute {
 	background-color: #8b8000;
 }
 .worldGoals.image {
