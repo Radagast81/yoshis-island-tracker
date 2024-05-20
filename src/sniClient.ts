@@ -24,6 +24,12 @@ class RomData {
   getDataAsBoolean(address: number, mask: number = 0x01): boolean {
     return (this.getDataAsNumber(address) & mask) !== 0;
   }
+  getDataAsNumberArray(address: number, length: number): number[] {
+    let result: number[] = new Array(length);
+	for(let i=0; i<length; i++)
+	  result[i] = this.getDataAsNumber(address+i);
+    return result;
+  }
 }
 class SNIClient {
   private connectionStatus: string;

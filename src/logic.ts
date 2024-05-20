@@ -239,9 +239,10 @@ class WorldGoal {
     let result = new Map<string, () => boolean>();
 	result.set("", getActiveRule(this.rules));
 	if(this.level.isBowserLevel()) {
-	  if(window.optionBowserCastleRoute == BowserCastleRouteTypes.DoorAll) {
+	  let optionBowserCastleRoute : BowserCastleRouteTypes = <BowserCastleRouteTypes>state.getGameOption(GameOptions.BowserCastleRoute);
+	  if(optionBowserCastleRoute == BowserCastleRouteTypes.DoorAll) {
 	    if(this.goalType==WorldGoalTypes.RedCoins||this.goalType==WorldGoalTypes.Flowers) {
-		  result.set(window.optionBowserCastleRoute, state.bowserCastleRoutes.get(BowserCastleRouteTypes.Door1).getActiveRule());
+		  result.set(optionBowserCastleRoute, state.bowserCastleRoutes.get(BowserCastleRouteTypes.Door1).getActiveRule());
 		} else {
 		  for(let [key, route] of state.bowserCastleRoutes.entries()) {
 		    if(key != BowserCastleRouteTypes.DoorSelect) {
@@ -250,7 +251,7 @@ class WorldGoal {
 		  }
 		}
 	  } else {
-	    result.set(window.optionBowserCastleRoute, state.bowserCastleRoutes.get(window.optionBowserCastleRoute).getActiveRule());
+	    result.set(optionBowserCastleRoute, state.bowserCastleRoutes.get(optionBowserCastleRoute).getActiveRule());
 	  }
 	}
 	if(this.level.isBossLevel()&&this.goalType==WorldGoalTypes.LevelClear) {
@@ -518,4 +519,4 @@ class State {
 }
 var state : State = new State();
 var lastState : State = new State();
-
+state.setGameOption(GameOptions.BowserCastleRoute, BowserCastleRouteTypes.DoorSelect);

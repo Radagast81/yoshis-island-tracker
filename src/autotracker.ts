@@ -4,6 +4,12 @@ var possibleGoals = [WorldGoalTypes.RedCoins,WorldGoalTypes.Flowers,WorldGoalTyp
 var state : State;
 var lastState : State;
 var WRAM_START = 0xF50000;
+var bowserCastleDoorBytes: number[][] = [
+   [0xB8, 0x05, 0x77, 0x00],
+   [0xC6, 0x07, 0x7A, 0x00],
+   [0xCD, 0x05, 0x5B, 0x00],
+   [0xD3, 0x00, 0x77, 0x06]
+];
 abstract class State {
   readonly worldLevels: Map<string, WorldLevel> = new Map<string, WorldLevel>();
   readonly worldGoals: Map<string, WorldGoal> = new Map<string, WorldGoal>();
@@ -36,6 +42,16 @@ abstract class WorldGoal {
   abstract getId() : string;
 }
 
+function isArrayEquals(a: number[], b:number[]): boolean {
+  if(a.length!=b.length)
+    return false;
+  for(let i=0; i<a.length; i++) {
+    if(a[i]!==b[i])
+	  return false;
+  }
+  return true;
+}
+
 class MyAutotracker {
   private sniClient: SNIClient;
   private state : State;
@@ -58,6 +74,8 @@ class MyAutotracker {
     this.sniClient.addDataSource("Collectables", 0x00, 0x0040, WRAM_START+0x1440);
     this.sniClient.addDataSource("Goals", 0x00, 0X0100, WRAM_START+0x146D);
     this.sniClient.addDataSource("LuigiPieces", 0x00, 0X0001, WRAM_START+0x14B5);
+    this.sniClient.addDataSource("BowserCastleDoors", 0x00, 0X0010, 0x07891F);
+    this.sniClient.addDataSource("BowserCastleLinkDoor1", 0x00, 0X0004, 0x0AF517);
 	
     //this.sniClient.addDataSource("All", 0x00, 0x2000, WRAM_START);
 	
@@ -81,7 +99,6 @@ class MyAutotracker {
 	if(this.lastState.getGameOption(gameOption) !== value)
 	  this.state.setGameOption(gameOption,value);
 	this.lastState.setGameOption(gameOption,value);
-    
   }
   private notifyDataChanged(data: Map<string, RomData>) {
     let optVals: RomData = data.get("Options");
@@ -160,6 +177,22 @@ class MyAutotracker {
 	  this.state.setLuigiPieces(luigiPieces);
 	this.lastState.setLuigiPieces(luigiPieces);
 	
+	let bowserDoor1: number[] = data.get("BowserCastleDoors").getDataAsNumberArray(0x00, 4);
+	let bowserDoor2: number[] = data.get("BowserCastleDoors").getDataAsNumberArray(0x04, 4);
+	let bowserLink1: number[] = data.get("BowserCastleLinkDoor1").getDataAsNumberArray(0x00, 4);
+	if(!isArrayEquals(bowserDoor1, bowserDoor2)) {
+	  this.setStateOptionIfChanged(GameOptions.BowserCastleRoute, "Door Selectable");
+	} else if(isArrayEquals(bowserLink1, bowserCastleDoorBytes[1])) {
+	  this.setStateOptionIfChanged(GameOptions.BowserCastleRoute, "Gaunlet");
+	} else if(isArrayEquals(bowserDoor1, bowserCastleDoorBytes[0])) {
+	  this.setStateOptionIfChanged(GameOptions.BowserCastleRoute, "Door1");
+	} else if(isArrayEquals(bowserDoor1, bowserCastleDoorBytes[1])) {
+	  this.setStateOptionIfChanged(GameOptions.BowserCastleRoute, "Door2");
+	} else if(isArrayEquals(bowserDoor1, bowserCastleDoorBytes[2])) {
+	  this.setStateOptionIfChanged(GameOptions.BowserCastleRoute, "Door3");
+	} else if(isArrayEquals(bowserDoor1, bowserCastleDoorBytes[3])) {
+	  this.setStateOptionIfChanged(GameOptions.BowserCastleRoute, "Door4");
+	} 
 	/*let curNumber = Array.from(data.get("All").data);
 	
 	if(!this.diffNumber)

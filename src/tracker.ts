@@ -1,9 +1,6 @@
 import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState, GameOptions } from "./model/types";
 
 declare global {
-    interface Window { 
-	  optionBowserCastleRoute: BowserCastleRouteTypes;
-	}
 }
 abstract class WorldLevel {
   readonly world: number;
@@ -92,7 +89,6 @@ var collectablesPerRow = 10;
 var collectableList = Array.from(state.collectables.keys());
 var collectableListStorage = "YoshisIslandTrackerCollectableOrder";
 var difficultyStorage = "YoshisIslandTrackerDifficulty";
-var bowserCastleRouteStorage = "YoshisIslandTrackerBowserCastleRoute";
 var showHardModeStorage = "YoshisIslandTrackerShowHardMode";
 var optionDifficulty: number;
 var optionShowHardMode: boolean;
@@ -103,9 +99,6 @@ var autotracker: Autotracker;
 	if(!window.localStorage.getItem(difficultyStorage))
 	  window.localStorage.setItem(difficultyStorage, "1");
 	optionDifficulty = parseInt(window.localStorage.getItem(difficultyStorage));
-	if(!window.localStorage.getItem(bowserCastleRouteStorage))
-	  window.localStorage.setItem(bowserCastleRouteStorage, BowserCastleRouteTypes.DoorSelect);
-	window.optionBowserCastleRoute = <BowserCastleRouteTypes>window.localStorage.getItem(bowserCastleRouteStorage);
 	optionShowHardMode = window.localStorage.getItem(showHardModeStorage) === "true";
 }
 
@@ -294,9 +287,6 @@ function setupMenuInHTML() : void {
   let difficultyDropdown = <HTMLSelectElement>document.getElementById("difficulty_dropdown");
   difficultyDropdown.value = optionDifficulty.toString();
   
-  let bowserCastleRouteDropdown = <HTMLSelectElement>document.getElementById("bc_route_dropdown");
-  bowserCastleRouteDropdown.value = window.optionBowserCastleRoute.toString();  
-  
   let checkBoxShowHardMode = <HTMLInputElement>document.getElementById("chkShowHardMode");
   checkBoxShowHardMode.checked = optionShowHardMode;  
   
@@ -316,9 +306,7 @@ function setupMenuInHTML() : void {
 }
 function copyGameOptions2State(): void {
   document.querySelectorAll("[gameOption]").forEach((element)=> {
-    if(element instanceof HTMLInputElement) {
-	  onInputElementChanged(element);
-	}
+	onInputElementChanged(element);
   });
 }
 function setupCollectablesInHTML() : void {
@@ -665,13 +653,6 @@ function onDifficultyChanged(): void {
   updateAllWorldGoals();
 }
 
-function onBowserCastleRouteChanged(): void {
-  let bowserCastleRouteDropdown = <HTMLSelectElement>document.getElementById("bc_route_dropdown");
-  window.optionBowserCastleRoute = <BowserCastleRouteTypes>bowserCastleRouteDropdown.value
-  window.localStorage.setItem(bowserCastleRouteStorage,bowserCastleRouteDropdown.value);
-  updateAllWorldGoals();
-}
-
 function onShowHardModeChanged(): void {
   let checkBoxShowHardMode = <HTMLInputElement>document.getElementById("chkShowHardMode");
   optionShowHardMode = checkBoxShowHardMode.checked;
@@ -716,9 +697,10 @@ function doSearchLevel() {
   resultField.textContent = result;
 }
 
-function onInputElementChanged(element: HTMLInputElement) {
+function onInputElementChanged(element: Element) {
   let gameOption = <GameOptions>element.getAttribute("gameOption");
   if(gameOption) {
+    if(element instanceof HTMLInputElement) {
 	  if(element.getAttribute("type")==="checkbox") {
 	    state.setGameOption(gameOption, <boolean>element.checked);
 	  } else if(element.getAttribute("type")==="number") {
@@ -729,6 +711,9 @@ function onInputElementChanged(element: HTMLInputElement) {
 	  } else {
 	    state.setGameOption(gameOption, element.value);
 	  }
+	} else if(element instanceof HTMLSelectElement) {
+	    state.setGameOption(gameOption, element.value);
+	}
   }
 }
 
@@ -756,6 +741,11 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
 	    input.checked = true;
 	  mainElement.classList.toggle("goal-Bowser", goalBowser);
 	  mainElement.classList.toggle("goal-Luigi-Pieces", !goalBowser);
+  } else if(GameOptions.BowserCastleRoute === optionType) {
+	  let input = <HTMLInputElement>document.querySelector("[gameOption='"+optionType+"']");
+	  if(input&&input.value !== value) 
+	    input.value = <string>value;
+      updateBowserCastleGoals();
   } else {
     console.log(optionType+" => "+value);
   }
@@ -771,15 +761,19 @@ function notifyLuigiPiecesChanged(value: number) {
     textField.value = value.toString();
 }
 
+function updateBowserCastleGoals() {
+	let bowserLevel = state.worldLevels.get("6-8");
+	for (let [goalId, goal] of bowserLevel.goals) {
+	  updateWorldGoalState(goal);
+	}
+}
+
 function notifySummaryChanged(checksCompleted: number, checksTotal: number, bossesCompleted: number, bossesTotal: number): void {
 	let displaySummaryChecks = document.getElementById("summaryChecks");
 	let displaySummaryBosses = document.getElementById("summaryBosses");
 	displaySummaryChecks.textContent = checksCompleted + " / " + checksTotal;
 	displaySummaryBosses.textContent = bossesCompleted + " / " + bossesTotal;
-	let bowserLevel = state.worldLevels.get("6-8");
-	for (let [goalId, goal] of bowserLevel.goals) {
-	  updateWorldGoalState(goal);
-	}
+	updateBowserCastleGoals();
 }
 
 function toggleOptionMenu() {
