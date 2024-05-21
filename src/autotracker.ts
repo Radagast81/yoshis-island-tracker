@@ -1,4 +1,4 @@
-import { WorldGoalTypes, CollectableTypes, BowserCastleRouteTypes, GameOptions } from "./model/types";
+import { WorldGoalTypes, CollectableTypes, BowserCastleRouteTypes, GameOptions, BossTypes } from "./model/types";
 var allBowserCastleRoutes: BowserCastleRouteTypes[];
 var possibleGoals = [WorldGoalTypes.RedCoins,WorldGoalTypes.Flowers,WorldGoalTypes.Stars, WorldGoalTypes.LevelClear, WorldGoalTypes.Game];
 var state : State;
@@ -10,6 +10,16 @@ var bowserCastleDoorBytes: number[][] = [
    [0xCD, 0x05, 0x5B, 0x00],
    [0xD3, 0x00, 0x77, 0x06]
 ];
+
+var defaultBosses = 
+  [BossTypes.Boss14, BossTypes.Boss18
+  ,BossTypes.Boss24, BossTypes.Boss28
+  ,BossTypes.Boss34, BossTypes.Boss38
+  ,BossTypes.Boss44, BossTypes.Boss48
+  ,BossTypes.Boss54, BossTypes.Boss58
+  ,BossTypes.Boss64];
+var optionSpoilerBosses: boolean;
+
 abstract class State {
   readonly worldLevels: Map<string, WorldLevel> = new Map<string, WorldLevel>();
   readonly worldGoals: Map<string, WorldGoal> = new Map<string, WorldGoal>();
@@ -21,6 +31,7 @@ abstract class State {
   abstract setGameOption(optionType:GameOptions, value: string|number|boolean): void;
   abstract getLuigiPieces(): number;
   abstract setLuigiPieces(value: number): void;
+  abstract getLevel(world: number, level: number) : WorldLevel;
 }
 abstract class Collectable {
   readonly collectableType: CollectableTypes;;
@@ -34,6 +45,7 @@ abstract class WorldLevel {
   abstract isBowserLevel() : boolean;
   abstract setLocked(locked: boolean): void;
   abstract isLocked() : boolean;
+  abstract setBossByType(bossType: BossTypes): void 
 }
 abstract class WorldGoal {
   readonly goalType: WorldGoalTypes;
@@ -42,7 +54,7 @@ abstract class WorldGoal {
   abstract getId() : string;
 }
 
-function isArrayEquals(a: number[], b:number[]): boolean {
+function isArrayEquals<T>(a: Array<T>, b:Array<T>): boolean {
   if(a.length!=b.length)
     return false;
   for(let i=0; i<a.length; i++) {
@@ -59,6 +71,9 @@ class MyAutotracker {
   //private lastNumber : number[];
   //private diffNumber : number[];
   
+  clearLastRecieved(): void {
+    this.sniClient?.clearLastRecieved();
+  }
   
   addConnectionStatusListener(listener: {(connectionStatus: string): void }): number {
     return this.sniClient.addConnectionStatusListener((status)=>listener(status.length>0?"Autotracking Status: "+status:""));
@@ -76,6 +91,7 @@ class MyAutotracker {
     this.sniClient.addDataSource("LuigiPieces", 0x00, 0X0001, WRAM_START+0x14B5);
     this.sniClient.addDataSource("BowserCastleDoors", 0x00, 0X0010, 0x07891F);
     this.sniClient.addDataSource("BowserCastleLinkDoor1", 0x00, 0X0004, 0x0AF517);
+    this.sniClient.addDataSource("Bosses", 0x00, 0X000B, 0x06FC8D);
 	
     //this.sniClient.addDataSource("All", 0x00, 0x2000, WRAM_START);
 	
@@ -85,6 +101,7 @@ class MyAutotracker {
   setPort(port: number) {
     this.sniClient.setURL(port?"ws://localhost:"+port:null);
   }
+  
   private setCollectable(collectableType: CollectableTypes, value: boolean) {
     let collectable : Collectable = this.state.collectables.get(collectableType);
 	if(!collectable.getValue()&&value)
@@ -193,6 +210,25 @@ class MyAutotracker {
 	} else if(isArrayEquals(bowserDoor1, bowserCastleDoorBytes[3])) {
 	  this.setStateOptionIfChanged(GameOptions.BowserCastleRoute, "Door4");
 	} 
+	
+	let bossData: RomData = data.get("Bosses");
+	let bosses: BossTypes[] = new Array();
+	for(let i=0; i<11; i++) {
+	  bosses.push(defaultBosses[bossData.getDataAsNumber(i)]);
+	}
+	
+	if(isArrayEquals(bosses, defaultBosses)) {
+	  this.setStateOptionIfChanged(GameOptions.BossShuffle, false);
+	} else {
+	  this.setStateOptionIfChanged(GameOptions.BossShuffle, true);
+	  console.log("optionSpoilerBosses: "+optionSpoilerBosses);
+	  if(optionSpoilerBosses) {
+	    for(let i=0; i<11; i++) {
+		  this.state.getLevel(Math.floor(i/2)+1, (i%2+1)*4).setBossByType(bosses[i]);
+		}	    
+	  }
+	}
+	
 	/*let curNumber = Array.from(data.get("All").data);
 	
 	if(!this.diffNumber)

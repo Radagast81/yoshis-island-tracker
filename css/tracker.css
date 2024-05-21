@@ -296,7 +296,6 @@ div.app {
 }
 .options {
 	height: 100vh;
-	z-index: 1;
 	border-left: solid 1px;
 	padding-left: 10px;
 }
@@ -351,4 +350,47 @@ img.optionToggle {
 }
 .options.HideOptions {
 	display: none;
+}
+
+.context-menu {
+	visibility: hidden;  
+	position: absolute;
+	display: inline-block;
+	background-color: black;
+	z-index: 1;
+	border: outset;
+	width: 168px;
+	height: 145px;
+	padding-left: 3px;
+	padding-right: 3px;
+	opacity: 0;
+}
+.context-menu::after {
+  content: "";
+  position: absolute;
+  top: 15%;
+  left: -16px;
+  margin-left: -16px;
+  border-width: 16px;
+  border-style: solid;
+  border-color: transparent white transparent transparent;
+}
+.context-menu-cancel-icon {
+	position: absolute;
+	right: -1px;
+	top: -1px;
+	width: 12px;
+	z-index: 2;
+}
+.context-menu-boss-icon {
+	margin: 3px;
+	width: 36px;
+}
+.context-menu-boss-row {
+	margin: 0px;
+}
+.context-menu.active {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.3s;
 }

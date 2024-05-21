@@ -64,6 +64,9 @@
 					<label for="chkShowHardMode">Show harder difficulty beatability</label>
 					<br class="separate"/>
 					<button id="btnResetLayout" onclick="resetCollectableList()">Reset Layout</button>
+					<br class="separate"/>
+					<input type="checkbox" id="chkSpoilerBosses" name="chkSpoilerBosses" onchange="onSpoilerBossesChanged(this)"/>
+					<label for="chkSpoilerBosses">Spoiler: Autotrack boss order</label>
 				</div>
 				<h3>Game options:</h3>
 				<div id="gameOptions" class="optionsGroup">
@@ -116,6 +119,12 @@
 					  <input class="textFieldInline" name="inputCastleClearCondition" id="inputCastleClearCondition" type="number" size=4 min=0 max=11 value=0 onchange="onInputElementChanged(this)" gameOption="BowserCastleClear"/>
 					  Bosses needed to defeat Bowser
 					</label>
+					<br class="separate"/>
+					<!--<input type="checkbox" id="chkShuffleLevel" name="chkShuffleLevel" onchange="onInputElementChanged(this)" gameOption="LevelShuffle">
+					<label for="chkExtraLevel">Level Shuffle</label>
+					<br/>-->
+					<input type="checkbox" id="chkShuffleBoss" name="chkShuffleBoss" onchange="onInputElementChanged(this)" gameOption="BossShuffle">
+					<label for="chkExtraLevel">Boss Shuffle</label>
 				</div>
 			</div>
 		</div>

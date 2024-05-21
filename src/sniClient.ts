@@ -83,6 +83,10 @@ class SNIClient {
     this.romData.set(id, new RomData(id, startAddress, length, offset));
   }
   
+  clearLastRecieved(): void {
+    this.lastDataReceived = null;
+  }
+  
   connect() : void {
     if (this.webSocket) {
         this.cleanup();

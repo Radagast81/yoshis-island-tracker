@@ -6,7 +6,8 @@ var allBosses = [BossTypes.Boss14, BossTypes.Boss18
 	            ,BossTypes.Boss34, BossTypes.Boss38
 	            ,BossTypes.Boss44, BossTypes.Boss48
 	            ,BossTypes.Boss54, BossTypes.Boss58
-	            ,BossTypes.Boss64, BossTypes.Boss68];
+	            ,BossTypes.Boss64, BossTypes.Boss68
+				,BossTypes.Unknown];
 var allCollectables = [
 		CollectableTypes.SpringBallLarge,
 		CollectableTypes.SpringBallSmall,
@@ -117,6 +118,14 @@ var levelNames: Map<string, string> = new Map([
 
 var gameLevels: string[] = ["1-3", "1-7", "2-1", "2-3", "2-6", "2-7", "3-2", "3-7", "4-2", "4-6", "4-7", "5-1", "6-1", "6-7"];
 
+function removeItem<T>(arr: Array<T>, value: T): Array<T> { 
+  const index = arr.indexOf(value);
+  if (index > -1) {
+    arr.splice(index, 1);
+  }
+  return arr;
+}
+
 function calcWorldId(world: number, level: number) {
   return world + "-" + (level===9?"E":(level>9?"B":level));
 }
@@ -134,9 +143,10 @@ class WorldLevel {
   readonly level: number;
   readonly name: string;
   private locked: boolean;
-  boss : Boss;
+  private boss : Boss;
   goals: Map<WorldGoalTypes,WorldGoal> = new Map<WorldGoalTypes,WorldGoal>();
-  private lockChangeListener: {(level: WorldLevel): void }[] = [];
+  private lockChangeListener: {(level: WorldLevel): void}[] = [];
+  private bossChangeListener: {(level: WorldLevel): void}[] = [];
   
   addLockChangeListener(listener: {(level: WorldLevel): void }): number {
     return this.lockChangeListener.push(listener) - 1;
@@ -200,6 +210,29 @@ class WorldLevel {
 	  (this.level == 9 && <boolean>state.getGameOption(GameOptions.ExtraLevel)) ||
 	  (this.level == 10 && <boolean>state.getGameOption(GameOptions.MinigameBonus));
   }
+  
+  setBoss(boss : Boss) : void {
+    let changed: boolean = (boss !== this.boss);
+    this.boss = boss;
+	if(changed)
+	  this.bossChangeListener.filter(listener=>listener).forEach(listener=>listener(this));
+  }
+  
+  setBossByType(bossType: BossTypes): void {
+    this.setBoss(state.bosses.get(bossType));
+  }
+  
+  getBoss(): Boss {
+    return this.boss;
+  }
+  
+  addBossChangeListener(listener: {(level: WorldLevel): void }): number {
+    return this.bossChangeListener.push(listener) - 1;
+  }
+  
+  removeBossChangeListener(index: number) : void {
+    this.bossChangeListener[index] = null;
+  }
 }
 
 class WorldGoal {
@@ -254,19 +287,42 @@ class WorldGoal {
 	    result.set(optionBowserCastleRoute, state.bowserCastleRoutes.get(optionBowserCastleRoute).getActiveRule());
 	  }
 	}
-	if(this.level.isBossLevel()&&this.goalType==WorldGoalTypes.LevelClear) {
-	  let boss = this.level.boss;
+	if(this.level.isBossLevel()&&this.goalType==WorldGoalTypes.LevelClear&&this.level.getBoss()?.id!==BossTypes.Unknown) {
+	  let boss = this.level.getBoss();
 	  result.set(boss.id, boss.getActiveRule());
 	}
     return result;
   }
+  private getFunctionString(value: () => boolean) {
+    return value?.toString().replace(/function\s*\(\s*\)\s*{\s*return\s*([\s\S]*)\s*;\s*}/g, "$1");
+  }
   getRulesAsStrings(evalState: EvaluationState): Map<string, string> {
-    return new Map(Array.from(this.getRules(evalState)).map(([key, value]) => [key, value?.toString().replace(/function\s*\(\s*\)\s*{\s*return\s*([\s\S]*)\s*;\s*}/g, "$1")]));
+    let result: Map<string, string> = new Map(Array.from(this.getRules(evalState)).map(([key, value]) => [key, this.getFunctionString(value)]));
+	if(this.level.getBoss()?.id===BossTypes.Unknown&&this.goalType==WorldGoalTypes.LevelClear) {
+	  let unassignedBosses = state.getUnassignedBosses();
+	  let remainingBossRules = new Set(unassignedBosses.map((boss)=> {
+	    let result: string = this.getFunctionString(boss.getActiveRule());
+		if(!result||result==="true")
+		  result = "";
+		return result;
+	  }));
+	  result.set(BossTypes.Unknown+"("+unassignedBosses.slice(0,3).map((boss)=>boss.id).join(", ")+(unassignedBosses.length>3?", ...":"")+")", "("+Array.from(remainingBossRules).join(") || (")+")");
+	}
+	return result;
   }
   evaluateRules(evalState: EvaluationState) : boolean {
     for(let rule of this.getRules(evalState).values()) {
 	  if(rule&&!rule())
 	    return false;
+	}
+	if(this.level.getBoss()?.id===BossTypes.Unknown&&this.goalType==WorldGoalTypes.LevelClear) {
+	  for(let boss of state.getUnassignedBosses()) {
+	    let rule = boss.getActiveRule();
+		if(!rule||rule()) {
+		  return true; // Level could be beatable since there is a beatable boss left
+		}
+	  }
+	  return false; // No of the remaining bosses is beatable
 	}
 	return true;
   }
@@ -384,9 +440,6 @@ class State {
 	  this.worldOpen.set(w, false);
 	  for(let l=1; l<=10; l++) {
 	    let level = new WorldLevel(w,l);
-		if(level.isBossLevel) {
-		  level.boss = this.bosses.get(allBosses[2 * (w-1)+ Math.floor((l-1)/4)]);
-		}
 		this.worldLevels.set(level.getId(), level);
 		if(l<10)
 			for(let g of allGoals) {
@@ -399,6 +452,17 @@ class State {
 	}
 	for(let bc  of allBowserCastleRoutes) {
 	  this.bowserCastleRoutes.set(bc, new BowserCastleRoute(bc));
+	}
+	this.assignBosses();
+  }
+  private assignBosses(): void {
+    for(let [LevelID, level] of this.worldLevels.entries()) {
+	  if(level.isBossLevel()) {
+	    if(this.gameOptions.get(GameOptions.BossShuffle)&&!level.isBowserLevel())
+		  level.setBoss(this.bosses.get(BossTypes.Unknown));
+		else
+		  level.setBoss(this.bosses.get(allBosses[2 * (level.world-1)+ Math.floor((level.level-1)/4)]));
+	  }
 	}
   }
   getLevel(world: number, level: number) : WorldLevel {
@@ -439,6 +503,8 @@ class State {
 	  this.gameOptionChangeListener.filter(listener=>listener).forEach(listener=>listener(optionType, value));
 	  if(GameOptions.MinigameBandit===optionType||GameOptions.MinigameBonus===optionType||GameOptions.ExtraLevel===optionType)
 	    this.calculateSummaries();
+	  if(GameOptions.BossShuffle===optionType)
+	    this.assignBosses();
 	}
   }
   
@@ -515,6 +581,18 @@ class State {
   }
   getBossesCompleted(): number {
     return this.bossesCompleted;
+  }
+  getUnassignedBosses(): Boss[] {
+    let result: Boss[] = new Array();
+	for(let [id, boss] of this.bosses.entries()) {
+	  if(boss.id!== BossTypes.Boss68&&boss.id!== BossTypes.Unknown)
+	    result.push(boss);
+	}
+	for(let [id, level] of this.worldLevels) {
+	  if(level.getBoss())
+	    result = removeItem(result, level.getBoss());
+	}
+	return result;
   }
 }
 var state : State = new State();

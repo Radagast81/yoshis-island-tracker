@@ -1,12 +1,9 @@
 import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState, GameOptions } from "./model/types";
 
-declare global {
-}
 abstract class WorldLevel {
   readonly world: number;
   readonly level: number;
   readonly name: string;
-  boss : Boss;
   goals: Map<WorldGoalTypes,WorldGoal> = new Map<WorldGoalTypes,WorldGoal>();
   abstract getId() : string;
   abstract isBossLevel() : boolean;
@@ -14,10 +11,14 @@ abstract class WorldLevel {
   abstract toggleGoalsCompleted() : void;
   abstract switchBossWithLevel(other: WorldLevel): void;
   abstract addLockChangeListener(listener: {(level: WorldLevel): void }): number;
+  abstract addBossChangeListener(listener: {(level: WorldLevel): void }): number;
   abstract isLocked() : boolean;
   abstract toggleLocked(): void;
+  abstract getBoss(): Boss;
+  abstract setBossByType(bossType: BossTypes): void;
   
   htmlElement: HTMLElement;
+  htmlImage: HTMLImageElement;
 }
 abstract class WorldGoal {
   // included from logic.ts:
@@ -77,8 +78,10 @@ abstract class State {
 abstract class Autotracker {
   abstract addConnectionStatusListener(listener: {(connectionStatus: string): void }): number;
   abstract setPort(port: number): void;
+  abstract clearLastRecieved(): void;
 }
 
+var optionSpoilerBosses: boolean = false;
 var state : State;
 var levelNames: Map<string, string>;
 
@@ -277,6 +280,7 @@ function initTrackerHTML() : void {
   setupCollectablesInHTML();
   setupWorldsInHTML();
   setupMenuInHTML();
+  setupBossChoiceContextMenu();
   resetLogicInfobox();
   autotracker = createAutotracker();
   autotracker.addConnectionStatusListener(updateSniConnectionStatus);
@@ -303,6 +307,8 @@ function setupMenuInHTML() : void {
   notifyLuigiPiecesChanged(state.getLuigiPieces());
   state.addSummaryChangeListener((checksCompleted, checksTotal, bossesCompleted, bossesTotal)=>notifySummaryChanged(checksCompleted, checksTotal, bossesCompleted, bossesTotal));
   notifySummaryChanged(state.getChecksCompleted(), state.getChecksTotal(), state.getBossesCompleted(), state.getBossesTotal());
+  
+  (<HTMLInputElement>document.getElementById("chkSpoilerBosses")).checked = false;
 }
 function copyGameOptions2State(): void {
   document.querySelectorAll("[gameOption]").forEach((element)=> {
@@ -351,7 +357,45 @@ function setupCollectablesInHTML() : void {
 	rowElement.appendChild(cellElement);
   }
 }
-
+function setupBossChoiceContextMenu() {
+  let mainElement = <HTMLElement>document.getElementById("app");
+  let allBosses = 
+    [BossTypes.Boss14, BossTypes.Boss18
+	,BossTypes.Boss24, BossTypes.Boss28
+	,BossTypes.Boss34, BossTypes.Boss38
+	,BossTypes.Boss44, BossTypes.Boss48
+	,BossTypes.Boss54, BossTypes.Boss58
+	,BossTypes.Boss64, BossTypes.Unknown];
+  let contextMenu = Object.assign(document.createElement("div"), {
+	  className: "context-menu",
+	  id: "context-menu-boss"
+  });
+  let cancelElement: HTMLImageElement = Object.assign(document.createElement("img"), {
+	  src: "images/cancel.png",
+	  className: "context-menu-cancel-icon",
+	  id: "context-menu-boss-cancel",
+	  onclick: (e:Event)=>hideContextMenu()
+	});
+  contextMenu.appendChild(cancelElement);
+  let rowElement: HTMLElement;
+  for(let i=0; i<allBosses.length; i++) {
+    if(i%4==0) {
+	  rowElement = Object.assign(document.createElement("div"), {
+	      className: "context-menu-boss-row",
+		  id: "context-menu-boss-row-"
+	    });
+	  contextMenu.appendChild(rowElement);
+	}
+	let bossElement: HTMLImageElement = Object.assign(document.createElement("img"), {
+	  src: "images/worlds/" + allBosses[i] + ".png",
+	  className: "context-menu-boss-icon",
+	  id: "context-menu-boss-entry-"+i,
+	  onclick: (e:Event)=>assignBoss2Level(allBosses[i])
+	});
+	rowElement.appendChild(bossElement);
+  }
+  mainElement.appendChild(contextMenu);
+}
 function setupWorldsInHTML() : void {
   let worldNode = document.getElementById("worldoverlay");
   worldNode.textContent = '';
@@ -390,9 +434,7 @@ function setupWorldsInHTML() : void {
 		  if(world.level==9) {
 			  world.addLockChangeListener((lvl)=>{
 				worldLockToggle.classList.toggle("isLocked", lvl.isLocked());
-				for(let [goalId, g] of lvl.goals.entries()) {
-				  updateWorldGoalState(g);
-				}
+				updateLevelGoals(lvl);
 			  });
 		  } else {
 			  world.addLockChangeListener((lvl)=>{
@@ -407,6 +449,7 @@ function setupWorldsInHTML() : void {
 		  className: "worldLabel",
 		  target: "_blank",
 		  textContent: worldId,
+		  title: "Open Map from MarioUniverse.com"
 		});
 		let worldImage = Object.assign(document.createElement("img"), {
 		  src: "images/worlds/" + worldId + ".png",
@@ -417,6 +460,7 @@ function setupWorldsInHTML() : void {
 		  height: 48,
 		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world)
 		});
+		world.htmlImage = worldImage;
 		let worldImageFinish = Object.assign(document.createElement("img"), {
 		  id: "world-"+worldId+"-finish",
 		  className: "worldFinishedImage",
@@ -428,12 +472,10 @@ function setupWorldsInHTML() : void {
 		  worldImage.classList.add("castle");
           if(!world.isBowserLevel()) {
 		    worldImage = Object.assign(worldImage, {
-		      src: "images/worlds/" + world.boss.id + ".png",
-			  draggable: true,
-			  dropzone: "move string:text/html",
-			  ondragstart: (e:DragEvent)=> dragStartBoss(e, world),
-			  ondragover: (e:DragEvent)=> e.preventDefault(),
-			  ondrop: (e:DragEvent)=> dropBoss(e, world)
+			  oncontextmenu: (e:Event)=> {
+			    showContextMenu(world);
+				e.preventDefault();
+			  }
 			});
 		  }
 		}
@@ -480,12 +522,14 @@ function setupWorldsInHTML() : void {
 				height: 8,
 				onclick: (e:Event) => toggleWorldGoalCompleted(goal)
 			  });
-			  updateWorldGoalState(goal);
 			  goal.addDataChangeListener((goal)=> updateWorldGoalState(goal));
+			  updateWorldGoalState(goal);
 			  goalsCell.append(goal.htmlImage, goal.htmlImageSubstitute,goal.htmlImageLenseNeeded,goal.htmlImageBeatableWithHarderDifficulty);
 			  goalsCol.appendChild(goalsCell);
 			}
 	        rowElement.appendChild(goalsCol);
+			world.addBossChangeListener((w)=>notifyWorldLevelBossChanged(w));
+			notifyWorldLevelBossChanged(world, false);
 		} else {
 		    updateLevelState(world);
 			for(let [goalId, goal] of world.goals.entries()) {
@@ -523,22 +567,6 @@ function dropCollectable(event: DragEvent, collectable: CollectableTypes) {
       setupCollectablesInHTML();
   }
 }
-function dragStartBoss(event: DragEvent, world: WorldLevel) {
-  if(event.target instanceof Element) {
-    event.dataTransfer.setData("text/plain", world.getId());
-	event.dataTransfer.effectAllowed = "move";
-  }
-}
-function dropBoss(event: DragEvent, world: WorldLevel) {
-  if(!(event.target instanceof Element))
-    return;
-  let startWorld = state.worldLevels.get(event.dataTransfer.getData("text/plain"));
-  if(startWorld&&startWorld!=world) {
-    world.switchBossWithLevel(startWorld);
-      setupWorldsInHTML();
-  }
-}
-
 function setGoalRequirementsHighlights(goal: WorldGoal) : void {
   const nullText = "No items needed.";
   let displayText = "";
@@ -561,6 +589,7 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
       displayText += "   "+nullText+"\r\n";
 	}
   }
+  displayText = displayText.replaceAll("()", "("+nullText+")");
   setInfoBoxText(displayText);
   if(/has(Eggs)?\s*\(/g.test(combinedFuncText)) {
     isGoalRequirementsHighlighted = true;
@@ -762,6 +791,11 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
 	  if(input&&input.value !== value) 
 	    input.value = <string>value;
       updateBowserCastleGoals();
+  } else if(GameOptions.BossShuffle === optionType||GameOptions.LevelShuffle === optionType) {
+	mainElement.classList.toggle(optionType.replace(" ","-"), <boolean>value);
+	let checkBox = <HTMLInputElement>document.querySelector("[gameOption='"+optionType+"']");
+	if(checkBox&&checkBox.checked !== value)
+	    checkBox.checked = <boolean>value;
   } else {
     console.log(optionType+" => "+value);
   }
@@ -778,10 +812,13 @@ function notifyLuigiPiecesChanged(value: number) {
 }
 
 function updateBowserCastleGoals() {
-	let bowserLevel = state.worldLevels.get("6-8");
-	for (let [goalId, goal] of bowserLevel.goals) {
-	  updateWorldGoalState(goal);
-	}
+	updateLevelGoals(state.worldLevels.get("6-8"));
+}
+
+function updateLevelGoals(level: WorldLevel) {
+  for (let [goalId, goal] of level.goals.entries()) {
+	updateWorldGoalState(goal);
+  }
 }
 
 function notifySummaryChanged(checksCompleted: number, checksTotal: number, bossesCompleted: number, bossesTotal: number): void {
@@ -795,4 +832,37 @@ function notifySummaryChanged(checksCompleted: number, checksTotal: number, boss
 function toggleOptionMenu() {
   let mainElement = <HTMLElement>document.getElementById("optionPanel");
   mainElement.classList.toggle("HideOptions");
+}
+let contextMenu4Level: WorldLevel;
+
+function showContextMenu(level: WorldLevel) {
+  contextMenu4Level = level;
+  let contextMenu: HTMLElement = document.getElementById("context-menu-boss");
+  let elementRect = level.htmlElement.getBoundingClientRect();
+  contextMenu.style.top = (elementRect.top-8)+"px";
+  contextMenu.style.left = (elementRect.right+2)+"px";
+  contextMenu.classList.toggle("active", true);
+}
+
+function hideContextMenu() {
+  let contextMenu: HTMLElement = document.getElementById("context-menu-boss");
+  contextMenu.classList.toggle("active", false);
+}
+
+function notifyWorldLevelBossChanged(world: WorldLevel, updateGoals: boolean=true) {
+  if(world.getBoss()&&!world.isBowserLevel()) {
+	  world.htmlImage = Object.assign(world.htmlImage, {
+		src: "images/worlds/"+world.getBoss().id+".png"
+	  });
+	if(updateGoals)
+	  updateAllWorldGoals();
+  }
+}
+function assignBoss2Level(bossType: BossTypes) {
+  contextMenu4Level?.setBossByType(bossType);
+  hideContextMenu();
+}
+function onSpoilerBossesChanged(checkBox: HTMLInputElement): void {
+  optionSpoilerBosses = checkBox.checked; 
+  autotracker?.clearLastRecieved();
 }

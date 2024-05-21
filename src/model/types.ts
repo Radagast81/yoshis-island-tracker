@@ -49,7 +49,8 @@ export const enum BossTypes {
   Boss54 = "Sluggy The Unshaven",
   Boss58 = "Raphael The Raven",
   Boss64 = "Tap-Tap The Red Nose",
-  Boss68 = "Baby Bowser"
+  Boss68 = "Baby Bowser",
+  Unknown = "Unknown Boss"
 }
 export const enum BowserCastleRouteTypes {
   DoorSelect = "Door Selectable",
@@ -68,7 +69,9 @@ export const enum GameOptions {
   MinigameBonus = "Minigame Bonus",
   BowserCastleRoute = "BowserCastleRoute",
   BowserCastleEnter = "BowserCastleEnter",
-  BowserCastleClear = "BowserCastleClear"
+  BowserCastleClear = "BowserCastleClear",
+  BossShuffle = "BossShuffle",
+  LevelShuffle = "LevelShuffle"
 }
 
 export type EvaluationState = {
