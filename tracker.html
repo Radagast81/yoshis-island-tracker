@@ -55,25 +55,22 @@
 			<div id="optionsoverlay">
 			    <h3>Tracker options:</h3>
 				<div id="trackerOptions" class="optionsGroup">
-					<label class="textField">
+					<label class="textField lastElementOfGroup">
 					  Autotracker Port:
 					  <input class="textField" name="inputPort" id="inputPort" value="23074" type="number" size=13 onchange="onPortChanged()"/>
 					</label>
-					<br class="separate"/>
-					<input type="checkbox" id="chkShowHardMode" name="chkShowHardMode" onchange="onShowHardModeChanged()"/>
-					<label for="chkShowHardMode">Show harder difficulty beatability</label>
-					<br class="separate"/>
-					<button id="btnResetLayout" onclick="resetCollectableList()">Reset Layout</button>
-					<br class="separate"/>
+					<br/>
+					<input type="checkbox" id="chkShowHardMode" name="chkShowHardMode" onchange="onShowHardModeChanged()" class="lastElementOfGroup"/>
+					<label for="chkShowHardMode" >Show harder difficulty beatability</label>
+					<br/>
+					<button id="btnResetLayout" onclick="resetCollectableList()" class="lastElementOfGroup" title="Order of collectable items can be adjusted by drag & drop. Use this button to reset it to it's default.">Reset Layout</button>
+					<br/>
 					<input type="checkbox" id="chkSpoilerBosses" name="chkSpoilerBosses" onchange="onSpoilerBossesChanged(this)"/>
 					<label for="chkSpoilerBosses">Spoiler: Autotrack boss order</label>
-					<br />
-					<input type="checkbox" id="chkSpoilerLevel" name="chkSpoilerLevel" onchange="onSpoilerLevelChanged(this)"/>
-					<label for="chkSpoilerLevel">Spoiler: Autotrack level order</label>
 				</div>
 				<h3>Game options:</h3>
 				<div id="gameOptions" class="optionsGroup">
-					<label class="radiogroup">
+					<label class="radiogroup lastElementOfGroup">
 					  Goal:
 					  <br/>
 					  <input type="radio" id="rbnGoalBowser" name="rbnGoal" onchange="onInputElementChanged(this)" gameOption="Goal" value=0 />
@@ -82,8 +79,8 @@
 					  <input type="radio" id="rbnGoalLuigiPieces" name="rbnGoal" onchange="onInputElementChanged(this)" gameOption="Goal" value=1 checked/>
 					  <label for="rbnGoalLuigiPieces">Collect <input class="textFieldInline" name="inputOptionLuigiPieces" id="inputOptionLuigiPieces" type="number" size=5 value=25 min=1 max=100 onchange="onInputElementChanged(this)" gameOption="Luigi Pieces Required"/> Luigi Pieces</label>
 					</label>
-					<br class="separate"/>
-					<label class="dropdown">
+					<br/>
+					<label class="dropdown lastElementOfGroup">
 					  Difficulty:
 					  <select name="difficulty_dropdown" id="difficulty_dropdown" onchange="onDifficultyChanged()">
 						<option value="0">Easy</option>
@@ -91,17 +88,17 @@
 						<option value="2">Hard</option>
 					  </select>
 					</label>
-					<br class="separate"/>
+					<br />
 					<input type="checkbox" id="chkExtraLevel" name="chkExtraLevel" onchange="onInputElementChanged(this)" gameOption="Extra Level" checked>
 					<label for="chkExtraLevel">Extra Level</label>
 					<br/>
 					<input type="checkbox" id="chkBonusLevel" name="chkBonusLevel" onchange="onInputElementChanged(this)" gameOption="Minigame Bonus">
 					<label for="chkBonusLevel">Bonus Level</label>
 					<br/>
-					<input type="checkbox" id="chkBanditGames" name="chkBanditGames" onchange="onInputElementChanged(this)" gameOption="Minigame Bandit"/>
+					<input type="checkbox" id="chkBanditGames" name="chkBanditGames" onchange="onInputElementChanged(this)" gameOption="Minigame Bandit" class="lastElementOfGroup"/>
 					<label for="chkBanditGames">Bandit games</label>
-					<br class="separate"/>
-					<label class="dropdown">
+					<br />
+					<label class="dropdown lastElementOfGroup">
 					  Bowser Castle Route:
 					  <select name="bc_route_dropdown" id="bc_route_dropdown" onchange="onInputElementChanged(this)" gameOption="BowserCastleRoute">
 						<option value="Door Selectable">Selectable Door</option>
@@ -112,17 +109,17 @@
 						<option value="Gaunlet">Gaunlet (All Doors)</option>
 					  </select>
 					</label>
-					<br class="separate"/>
-					<label class="textFieldInline">
+					<br/>
+					<label class="textFieldInline lastElementOfGroup">
 					  <input class="textFieldInline" name="inputCastleOpenCondition" id="inputCastleOpenCondition" type="number" size=4 min=0 max=11 value=5 onchange="onInputElementChanged(this)" gameOption="BowserCastleEnter"/>
 					  Bosses needed to enter Bowser's castle
 					</label>
-					<br class="separate"/>
-					<label class="textFieldInline">
+					<br/>
+					<label class="textFieldInline lastElementOfGroup">
 					  <input class="textFieldInline" name="inputCastleClearCondition" id="inputCastleClearCondition" type="number" size=4 min=0 max=11 value=0 onchange="onInputElementChanged(this)" gameOption="BowserCastleClear"/>
 					  Bosses needed to defeat Bowser
 					</label>
-					<br class="separate"/>
+					<br />
 					<!--<input type="checkbox" id="chkShuffleLevel" name="chkShuffleLevel" onchange="onInputElementChanged(this)" gameOption="LevelShuffle">
 					<label for="chkExtraLevel">Level Shuffle</label>
 					<br/>-->

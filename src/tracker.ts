@@ -84,7 +84,6 @@ abstract class Autotracker {
 }
 
 var optionSpoilerBosses: boolean = false;
-var optionSpoilerLevel: boolean = false;
 var state : State;
 var levelNames: Map<string, string>;
 
@@ -313,7 +312,6 @@ function setupMenuInHTML() : void {
   notifySummaryChanged(state.getChecksCompleted(), state.getChecksTotal(), state.getBossesCompleted(), state.getBossesTotal());
   
   (<HTMLInputElement>document.getElementById("chkSpoilerBosses")).checked = false;
-  (<HTMLInputElement>document.getElementById("chkSpoilerLevel")).checked = false;
 }
 function copyGameOptions2State(): void {
   document.querySelectorAll("[gameOption]").forEach((element)=> {
@@ -619,11 +617,14 @@ function orderWorldLevel(levelOrder: string[]): void {
 		    swapLevels(levelStart, levelEnd);
 		  index++;
 		}
-		if(index>= levelOrder.length)
+		if(index>= levelOrder.length) {
+          doSearchLevel();
 		  return;
+		}
 	  }
 	}
   }
+  doSearchLevel();
 }
 
 function setGoalRequirementsHighlights(goal: WorldGoal) : void {
@@ -782,16 +783,22 @@ function notifyWorldIsOpenChanged(element: HTMLElement, world: number, isOpen:bo
 function toggleWorldOpenState(world:number) {
   state.toggleWorldOpen(world);
 }
+function capitalizeString(s:string):string {
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 function doSearchLevel() {
   let inputField = <HTMLInputElement>document.getElementById("inputLevelSearch");
   let resultField = <HTMLElement>document.getElementById("levelSearchResult");
   let result: string = "";
-
   if(inputField.value && inputField.value.length>0)
   for(let [id,name] of levelNames.entries()) {
     if(name.toLowerCase().startsWith(inputField.value.toLowerCase())) {
 	  result = "> "+id;
+	  let level = state.worldLevels.get(id);
+	  if("world-"+level.world!==level.htmlElement.parentElement.id) {
+		result += " ("+capitalizeString(level.htmlElement.parentElement.id)+")";
+	  }
 	}
   }
   resultField.textContent = result;
@@ -923,9 +930,5 @@ function assignBoss2Level(bossType: BossTypes) {
 }
 function onSpoilerBossesChanged(checkBox: HTMLInputElement): void {
   optionSpoilerBosses = checkBox.checked; 
-  autotracker?.clearLastRecieved();
-}
-function onSpoilerLevelChanged(checkBox: HTMLInputElement): void {
-  optionSpoilerLevel = checkBox.checked; 
   autotracker?.clearLastRecieved();
 }

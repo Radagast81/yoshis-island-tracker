@@ -286,7 +286,7 @@ figure.worldIcon.noOpenGoals.castle{
 	display: inline-block;
 }
 .littleDisplayField {
-	width: 40px;
+	width: 100px;
 	display: inline-block;
 }
 div.app {
@@ -393,4 +393,7 @@ img.optionToggle {
   visibility: visible;
   opacity: 1;
   transition: opacity 0.3s;
+}
+.lastElementOfGroup {
+	margin-bottom: +8px;
 }

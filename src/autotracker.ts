@@ -19,7 +19,6 @@ var defaultBosses =
   ,BossTypes.Boss54, BossTypes.Boss58
   ,BossTypes.Boss64];
 var optionSpoilerBosses: boolean;
-var optionSpoilerLevel: boolean;
 
 abstract class State {
   readonly worldLevels: Map<string, WorldLevel> = new Map<string, WorldLevel>();
@@ -247,7 +246,7 @@ class MyAutotracker {
 	let levelList: string[] = data.get("Levels").getDataAsNumberArray(0, 47).map(
 	  (id)=>(Math.floor(id/level21RomId)+1)+"-"+(id%level21RomId+1)
 	);
-	if(optionSpoilerLevel&&!isArrayEquals(levelList, this.lastLevelOrder)) {
+	if(!isArrayEquals(levelList, this.lastLevelOrder)) {
 	  this.levelOrderChangeListener.filter(listener=>listener).forEach(listener=>listener(levelList));
 	}
 	this.lastLevelOrder = levelList;
