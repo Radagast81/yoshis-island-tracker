@@ -19,6 +19,7 @@ abstract class WorldLevel {
   
   htmlElement: HTMLElement;
   htmlImage: HTMLImageElement;
+  htmlGoals: HTMLElement;
 }
 abstract class WorldGoal {
   // included from logic.ts:
@@ -77,11 +78,13 @@ abstract class State {
 }
 abstract class Autotracker {
   abstract addConnectionStatusListener(listener: {(connectionStatus: string): void }): number;
+  abstract addLevelOrderChangeListener(listener: {(order: string[]): void }): number;
   abstract setPort(port: number): void;
   abstract clearLastRecieved(): void;
 }
 
 var optionSpoilerBosses: boolean = false;
+var optionSpoilerLevel: boolean = false;
 var state : State;
 var levelNames: Map<string, string>;
 
@@ -284,6 +287,7 @@ function initTrackerHTML() : void {
   resetLogicInfobox();
   autotracker = createAutotracker();
   autotracker.addConnectionStatusListener(updateSniConnectionStatus);
+  autotracker.addLevelOrderChangeListener(orderWorldLevel);
   onPortChanged();
 }
 
@@ -309,6 +313,7 @@ function setupMenuInHTML() : void {
   notifySummaryChanged(state.getChecksCompleted(), state.getChecksTotal(), state.getBossesCompleted(), state.getBossesTotal());
   
   (<HTMLInputElement>document.getElementById("chkSpoilerBosses")).checked = false;
+  (<HTMLInputElement>document.getElementById("chkSpoilerLevel")).checked = false;
 }
 function copyGameOptions2State(): void {
   document.querySelectorAll("[gameOption]").forEach((element)=> {
@@ -422,7 +427,8 @@ function setupWorldsInHTML() : void {
       }
 	    // Worlds
 		let worldLabeledIcon = Object.assign(document.createElement("figure"), {
-		  className: "worldIcon level-"+world.level
+		  className: "worldIcon level-"+world.level,
+		  id: worldId
 		});
 		world.htmlElement = worldLabeledIcon;
 		if (world.level>=9) {
@@ -458,14 +464,20 @@ function setupWorldsInHTML() : void {
 		  title: world.name,
 		  width: 48,
 		  height: 48,
-		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world)
+		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world),
+          ondragstart: (e:DragEvent)=> dragStartWorldLevel(e, world),
+          ondragover: (e:DragEvent)=> e.preventDefault(),
+          ondrop: (e:DragEvent)=> dropWorldLevel(e, world)
 		});
 		world.htmlImage = worldImage;
 		let worldImageFinish = Object.assign(document.createElement("img"), {
 		  id: "world-"+worldId+"-finish",
 		  className: "worldFinishedImage",
 		  width: 54,
-		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world)
+		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world),
+          ondragstart: (e:DragEvent)=> dragStartWorldLevel(e, world),
+          ondragover: (e:DragEvent)=> e.preventDefault(),
+          ondrop: (e:DragEvent)=> dropWorldLevel(e, world)
 		});
 		if(world.isBossLevel()) {
 		  worldLabeledIcon.classList.add("castle");
@@ -487,6 +499,7 @@ function setupWorldsInHTML() : void {
 			let goalsCol = Object.assign(document.createElement("div"), {
 			  className: "worldGoals col level-"+world.level
 			});
+			world.htmlGoals = goalsCol;
 			for(let [goalId, goal] of world.goals.entries()) {
 			  let goalsCell = Object.assign(document.createElement("div"), {
 				className: "worldGoals row goalType-"+goal.goalType.replaceAll(" ", "-"),
@@ -567,6 +580,52 @@ function dropCollectable(event: DragEvent, collectable: CollectableTypes) {
       setupCollectablesInHTML();
   }
 }
+function swapHTMLElements(obj1: HTMLElement, obj2: HTMLElement): void {
+    let temp:HTMLElement = document.createElement("div");
+    obj1.parentNode.insertBefore(temp, obj1);
+    obj2.parentNode.insertBefore(obj1, obj2);
+    temp.parentNode.insertBefore(obj2, temp);
+    temp.parentNode.removeChild(temp);
+}
+function swapLevels(obj1: WorldLevel, obj2: WorldLevel): void {
+  if(obj1 && obj2 && obj1 != obj2) {
+	  swapHTMLElements(obj1.htmlElement, obj2.htmlElement);
+	  swapHTMLElements(obj1.htmlGoals, obj2.htmlGoals);
+  }
+}
+function dragStartWorldLevel(event: DragEvent, worldlevel: WorldLevel) {
+  if(worldlevel.level > 8)
+    return;
+  event.dataTransfer.setData("text/plain", worldlevel.getId());
+  event.dataTransfer.effectAllowed = "move";
+}
+function dropWorldLevel(event: DragEvent, worldlevelEnd: WorldLevel) {
+  if(worldlevelEnd.level > 8)
+    return;
+  let worldlevelStart = state.worldLevels.get(event.dataTransfer.getData("text/plain"));
+  swapLevels(worldlevelStart,worldlevelEnd);
+}
+function orderWorldLevel(levelOrder: string[]): void {
+  let index : number = 0;
+  for(let w: number = 1; w <= 6; w++) {
+    let htmlWorldElement = document.getElementById("world-"+w);
+    for(let i: number = 0; i<htmlWorldElement.children.length; i++) {
+	  let curElement = htmlWorldElement.children[i];
+	  if(/\d-\d/g.test(curElement.id)) {
+	    let levelStart = state.worldLevels.get(curElement.id);
+	    let levelEnd = state.worldLevels.get(levelOrder[index]);
+        if(levelStart?.level <= 8) {
+		  if(levelEnd?.level <= 8)
+		    swapLevels(levelStart, levelEnd);
+		  index++;
+		}
+		if(index>= levelOrder.length)
+		  return;
+	  }
+	}
+  }
+}
+
 function setGoalRequirementsHighlights(goal: WorldGoal) : void {
   const nullText = "No items needed.";
   let displayText = "";
@@ -864,5 +923,9 @@ function assignBoss2Level(bossType: BossTypes) {
 }
 function onSpoilerBossesChanged(checkBox: HTMLInputElement): void {
   optionSpoilerBosses = checkBox.checked; 
+  autotracker?.clearLastRecieved();
+}
+function onSpoilerLevelChanged(checkBox: HTMLInputElement): void {
+  optionSpoilerLevel = checkBox.checked; 
   autotracker?.clearLastRecieved();
 }

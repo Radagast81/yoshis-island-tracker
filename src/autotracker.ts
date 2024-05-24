@@ -19,6 +19,7 @@ var defaultBosses =
   ,BossTypes.Boss54, BossTypes.Boss58
   ,BossTypes.Boss64];
 var optionSpoilerBosses: boolean;
+var optionSpoilerLevel: boolean;
 
 abstract class State {
   readonly worldLevels: Map<string, WorldLevel> = new Map<string, WorldLevel>();
@@ -55,6 +56,8 @@ abstract class WorldGoal {
 }
 
 function isArrayEquals<T>(a: Array<T>, b:Array<T>): boolean {
+  if(!a||!b)
+    return false;
   if(a.length!=b.length)
     return false;
   for(let i=0; i<a.length; i++) {
@@ -68,15 +71,26 @@ class MyAutotracker {
   private sniClient: SNIClient;
   private state : State;
   private lastState: State;
+  private lastLevelOrder: string[];
+  private levelOrderChangeListener: {(order: string[]): void}[] = [];
   //private lastNumber : number[];
   //private diffNumber : number[];
   
   clearLastRecieved(): void {
     this.sniClient?.clearLastRecieved();
+	this.lastLevelOrder = null;
   }
   
   addConnectionStatusListener(listener: {(connectionStatus: string): void }): number {
     return this.sniClient.addConnectionStatusListener((status)=>listener(status.length>0?"Autotracking Status: "+status:""));
+  }
+  
+  addLevelOrderChangeListener(listener: {(order: string[]): void }): number {
+    return this.levelOrderChangeListener.push(listener) - 1;
+  }
+  
+  removeLevelOrderChangeListener(index: number) : void {
+    this.levelOrderChangeListener[index] = null;
   }
   
   constructor() {
@@ -91,7 +105,8 @@ class MyAutotracker {
     this.sniClient.addDataSource("LuigiPieces", 0x00, 0X0001, WRAM_START+0x14B5);
     this.sniClient.addDataSource("BowserCastleDoors", 0x00, 0X0010, 0x07891F);
     this.sniClient.addDataSource("BowserCastleLinkDoor1", 0x00, 0X0004, 0x0AF517);
-    this.sniClient.addDataSource("Bosses", 0x00, 0X000B, 0x06FC8D);
+    this.sniClient.addDataSource("Bosses", 0x00, 11, 0x06FC8D);
+    this.sniClient.addDataSource("Levels", 0x00, 47, 0x11544B);
 	
     //this.sniClient.addDataSource("All", 0x00, 0x2000, WRAM_START);
 	
@@ -221,13 +236,22 @@ class MyAutotracker {
 	  this.setStateOptionIfChanged(GameOptions.BossShuffle, false);
 	} else {
 	  this.setStateOptionIfChanged(GameOptions.BossShuffle, true);
-	  console.log("optionSpoilerBosses: "+optionSpoilerBosses);
 	  if(optionSpoilerBosses) {
 	    for(let i=0; i<11; i++) {
 		  this.state.getLevel(Math.floor(i/2)+1, (i%2+1)*4).setBossByType(bosses[i]);
 		}	    
 	  }
 	}
+	
+	let level21RomId:number = 0x0C;
+	let levelList: string[] = data.get("Levels").getDataAsNumberArray(0, 47).map(
+	  (id)=>(Math.floor(id/level21RomId)+1)+"-"+(id%level21RomId+1)
+	);
+	if(optionSpoilerLevel&&!isArrayEquals(levelList, this.lastLevelOrder)) {
+	  this.levelOrderChangeListener.filter(listener=>listener).forEach(listener=>listener(levelList));
+	}
+	this.lastLevelOrder = levelList;
+	
 	
 	/*let curNumber = Array.from(data.get("All").data);
 	
