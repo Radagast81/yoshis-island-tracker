@@ -86,6 +86,7 @@ abstract class Autotracker {
 var optionSpoilerBosses: boolean = false;
 var state : State;
 var levelNames: Map<string, string>;
+const difficultyGlitched = 3;
 
 function getWorldGoalId(world:number, level: number, goaltype: WorldGoalTypes) : string {
   return state.getGoal(world, level, goaltype).getId();
@@ -249,10 +250,10 @@ function updateWorldGoalState(goal: WorldGoal) {
 		  canSeeClouds: false
 		}));
 	}
-	if(optionShowHardMode&&!isBeatable&&optionDifficulty<2) {
+	if(optionShowHardMode&&!isBeatable&&optionDifficulty<difficultyGlitched) {
 	  isBeatable = goal.evaluateRules({
 		collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
-		difficulty: optionDifficulty+1,
+		difficulty: difficultyGlitched,
 		consumableEgg: false,
 		consumableWatermelon: false,
 		canSeeClouds: true

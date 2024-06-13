@@ -397,3 +397,10 @@ img.optionToggle {
 .lastElementOfGroup {
 	margin-bottom: +8px;
 }
+.infoIcon {
+   display: inline-block;
+   content: url(../images/info.png);
+   width: 10px;
+   margin-left: 1px;
+   vertical-align: top;
+}

@@ -16,7 +16,7 @@
 		<div id="app" class="app main">
 			<div id="menuBar">
 				<label class="dropdown">
-			      Level search:
+			      Level search<img class="infoIcon" title="Enter start of level name (e.g. given by hint from archipelago) to search for the location."></img>:
 				  <input class="textField" type="text" name="level" list="levelList" id="inputLevelSearch" onchange="doSearchLevel()">
 				  <datalist id="levelList">
 				  </datalist>
@@ -56,19 +56,20 @@
 			    <h3>Tracker options:</h3>
 				<div id="trackerOptions" class="optionsGroup">
 					<label class="textField lastElementOfGroup">
-					  Autotracker Port:
+					  Autotracker Port<img class="infoIcon" title="Enter port used by Usb2SNes or your SNI-Client to automatically read memory data from your SNes. Leaving this field empty will disable auto tracking."></img>:
 					  <input class="textField" name="inputPort" id="inputPort" value="23074" type="number" size=13 onchange="onPortChanged()"/>
 					</label>
 					<br/>
 					<input type="checkbox" id="chkShowHardMode" name="chkShowHardMode" onchange="onShowHardModeChanged()" class="lastElementOfGroup"/>
-					<label for="chkShowHardMode" >Show harder difficulty beatability</label>
+					<label for="chkShowHardMode" >Show harder difficulty beatability<img class="infoIcon" title="Enabling this option will show little chain chomp warning signs on the checks, that can be beaten but aren't in logic."></img>
+					</label>
 					<br/>
 					<button id="btnResetLayout" onclick="resetCollectableList()" class="lastElementOfGroup" title="Order of collectable items can be adjusted by drag & drop. Use this button to reset it to it's default.">Reset Layout</button>
 					<br/>
 					<input type="checkbox" id="chkSpoilerBosses" name="chkSpoilerBosses" onchange="onSpoilerBossesChanged(this)"/>
-					<label for="chkSpoilerBosses">Spoiler: Autotrack boss order</label>
+					<label for="chkSpoilerBosses">Spoiler: Autotrack boss order<img class="infoIcon" title="Enabling this option will automatically read which boss is in which level in boss shuffle. Normally this info is only availlable by entering the boss room."></img></label>
 				</div>
-				<h3>Game options:</h3>
+				<h3>Game options<img class="infoIcon" title="These option should be identical with the game options you have choosen, when generating your seed. Not all of them can by read from the ROM and therefore have to be specified manually."></img>:</h3>
 				<div id="gameOptions" class="optionsGroup">
 					<label class="radiogroup lastElementOfGroup">
 					  Goal:
@@ -81,11 +82,12 @@
 					</label>
 					<br/>
 					<label class="dropdown lastElementOfGroup">
-					  Difficulty:
+					  Stage Logic<img class="infoIcon" title="'Glitched' is no real option (yet), but is used to mark minimal requirements for the checks that are considered out of logic even for expert mode."></img>:
 					  <select name="difficulty_dropdown" id="difficulty_dropdown" onchange="onDifficultyChanged()">
-						<option value="0">Easy</option>
-						<option value="1">Normal</option>
-						<option value="2">Hard</option>
+						<option value="0">Strict</option>
+						<option value="1">Loose</option>
+						<option value="2">Expert</option>
+						<option value="3">Glitched</option>
 					  </select>
 					</label>
 					<br />
@@ -117,14 +119,11 @@
 					<br/>
 					<label class="textFieldInline lastElementOfGroup">
 					  <input class="textFieldInline" name="inputCastleClearCondition" id="inputCastleClearCondition" type="number" size=4 min=0 max=11 value=0 onchange="onInputElementChanged(this)" gameOption="BowserCastleClear"/>
-					  Bosses needed to defeat Bowser
+					  Bosses needed to defeat Bowser<img class="infoIcon" title="Will automatically set to 255 in luigi pieces hunt, cause Bowser is undefeatable in this mode"></img>
 					</label>
-					<br />
-					<!--<input type="checkbox" id="chkShuffleLevel" name="chkShuffleLevel" onchange="onInputElementChanged(this)" gameOption="LevelShuffle">
-					<label for="chkExtraLevel">Level Shuffle</label>
-					<br/>-->
+					<br/>
 					<input type="checkbox" id="chkShuffleBoss" name="chkShuffleBoss" onchange="onInputElementChanged(this)" gameOption="BossShuffle">
-					<label for="chkExtraLevel">Boss Shuffle</label>
+					<label for="chkExtraLevel">Boss Shuffle<img class="infoIcon" title="In boss shuffle mode the bosses are replaced with question marks. You can change the boss by right-clicking on that icon."></img></label>
 				</div>
 			</div>
 		</div>
