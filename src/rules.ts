@@ -751,18 +751,23 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
     setRule(6,6, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.ChompRock)&&has(CollectableTypes.Key)
 	  ,sameRule
-	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.ChompRock,consumableEgg)&&has(CollectableTypes.Key)]);
+	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.ChompRock,consumableEgg)&&has(CollectableTypes.Key)
+	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Key)]);
     setRule(6,6, WorldGoalTypes.Flowers,
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.ChompRock)&&has(CollectableTypes.Key)
 	  ,sameRule
-	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.ChompRock,consumableEgg)&&has(CollectableTypes.Key)]);
+	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.ChompRock,consumableEgg)&&has(CollectableTypes.Key)
+	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Key)]);
     setRule(6,6, WorldGoalTypes.Stars, 
 	  [() => has(CollectableTypes.ChompRock)&&has(CollectableTypes.Key)&&(has(CollectableTypes.Tulip)||(has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Midring)))
 	  ,sameRule
-	  ,() => has(CollectableTypes.ChompRock)&&has(CollectableTypes.Key)]);
+	  ,() => has(CollectableTypes.ChompRock)&&has(CollectableTypes.Key)
+	  ,() => has(CollectableTypes.Key)]);
     setRule(6,6, WorldGoalTypes.LevelClear, 
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.ChompRock)&&has(CollectableTypes.Key)&&has(CollectableTypes.DashedPlatform)
-	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.ChompRock,consumableEgg)&&has(CollectableTypes.Key)&&has(CollectableTypes.DashedPlatform)]);
+	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.ChompRock,consumableEgg)&&has(CollectableTypes.Key)&&has(CollectableTypes.DashedPlatform)
+	  ,sameRule
+	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Key)]);
 	
     setRule(6,7, WorldGoalTypes.RedCoins,
 	  [() => hasEggs(2,consumableEgg)
