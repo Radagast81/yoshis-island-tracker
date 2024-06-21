@@ -486,16 +486,24 @@ function hasEggs(i: number, substitute?: ()=>boolean): boolean {
 	
     setRule(4,4, WorldGoalTypes.RedCoins, 
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)&&has(CollectableTypes.Key)&&hasEggs(2,consumableEgg)
-	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)&&has(CollectableTypes.Key)]);
+	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)&&has(CollectableTypes.Key)
+	  ,sameRule
+	  ,() => has(CollectableTypes.DashedStairs,consumableWatermelon)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)&&has(CollectableTypes.Key)]);
     setRule(4,4, WorldGoalTypes.Flowers, 
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)&&hasEggs(2,consumableEgg)
-	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)]);
+	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)
+	  ,sameRule
+	  ,() => has(CollectableTypes.DashedStairs,consumableWatermelon)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)]);
     setRule(4,4, WorldGoalTypes.Stars, 
 	  [() => has(CollectableTypes.DashedStairs)&&(has(CollectableTypes.Midring)||has(CollectableTypes.VanishingArrowWheel)||canSeeClouds())
-	  ,() => has(CollectableTypes.DashedStairs)]);
+	  ,() => has(CollectableTypes.DashedStairs)
+	  ,sameRule
+	  ,() => has(CollectableTypes.DashedStairs,consumableWatermelon)]);
     setRule(4,4, WorldGoalTypes.LevelClear, 
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)&&has(CollectableTypes.Key)&&hasEggs(2,consumableEgg)
-	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)&&has(CollectableTypes.Key)]);
+	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)&&has(CollectableTypes.Key)
+	  ,sameRule
+	  ,() => has(CollectableTypes.DashedStairs,consumableWatermelon)&&has(CollectableTypes.VanishingArrowWheel)&&has(CollectableTypes.ArrowWheel)&&has(CollectableTypes.Bucket)&&has(CollectableTypes.Key)]);
 	
     setRule(4,5, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.ChompRock)
