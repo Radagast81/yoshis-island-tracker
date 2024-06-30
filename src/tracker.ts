@@ -128,16 +128,14 @@ var collectableList = Array.from(state.collectables.keys());
 var collectableListStorage = "YoshisIslandTrackerCollectableOrder";
 var difficultyStorage = "YoshisIslandTrackerDifficulty";
 var showHardModeStorage = "YoshisIslandTrackerShowHardMode";
-var optionDifficulty: number;
-var optionHarderDifficulty: number;
 var createAutotracker: {(): Autotracker };
 var autotracker: Autotracker;
 { 
     collectableList = loadOrderFromLocalStorage(collectableList, collectableListStorage);
 	if(!window.localStorage.getItem(difficultyStorage))
 	  window.localStorage.setItem(difficultyStorage, "1");
-	optionDifficulty = parseInt(window.localStorage.getItem(difficultyStorage));
-	optionHarderDifficulty = parseInt(window.localStorage.getItem(showHardModeStorage));
+	state.gameOptions.set(GameOptions.Difficulty, parseInt(window.localStorage.getItem(difficultyStorage)));
+	state.gameOptions.set(GameOptions.HarderDifficulty, parseInt(window.localStorage.getItem(showHardModeStorage)));
 }
 
 var isGoalRequirementsHighlighted = false;
@@ -256,7 +254,7 @@ function updateWorldGoalState(goal: WorldGoal) {
     
 	let isBeatable = goal.evaluateRules({
 	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
-	  difficulty: optionDifficulty,
+	  difficulty: <number>state.gameOptions.get(GameOptions.Difficulty),
 	  consumableEgg: false,
 	  consumableWatermelon: false,
 	  canSeeClouds: true
@@ -264,39 +262,39 @@ function updateWorldGoalState(goal: WorldGoal) {
 	let blocked = !isBeatable;
 	let canBeSubstitutedByConsumable = false;
 	if(blocked) {
-	  canBeSubstitutedByConsumable = checkForConsumable(goal, CollectableTypes.Egg, optionDifficulty);
+	  canBeSubstitutedByConsumable = checkForConsumable(goal, CollectableTypes.Egg, <number>state.gameOptions.get(GameOptions.Difficulty));
 	  blocked = !canBeSubstitutedByConsumable;
 	}
 	if(blocked) {
-	  canBeSubstitutedByConsumable = checkForConsumable(goal, CollectableTypes.Watermelon, optionDifficulty);
+	  canBeSubstitutedByConsumable = checkForConsumable(goal, CollectableTypes.Watermelon, <number>state.gameOptions.get(GameOptions.Difficulty));
 	  blocked = !canBeSubstitutedByConsumable;
 	}
 	goal.htmlImage.classList.toggle("completed", false);
 	goal.htmlImage.classList.toggle("blocked", blocked);
-	if(!blocked&&optionDifficulty==0) {
+	if(!blocked&&<number>state.gameOptions.get(GameOptions.Difficulty)==0) {
 	  goal.htmlImageLenseNeeded.classList.toggle("isNeeded",!goal.evaluateRules({
 		  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
-		  difficulty: optionDifficulty,
+		  difficulty: <number>state.gameOptions.get(GameOptions.Difficulty),
 		  consumableEgg: true,
 		  consumableWatermelon: true,
 		  canSeeClouds: false
 		}));
 	}
-	if(optionHarderDifficulty>optionDifficulty&&!isBeatable) {
+	if(<number>state.gameOptions.get(GameOptions.HarderDifficulty)><number>state.gameOptions.get(GameOptions.Difficulty)&&!isBeatable) {
 	  isBeatable = goal.evaluateRules({
 		collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
-		difficulty: optionHarderDifficulty,
+		difficulty: <number>state.gameOptions.get(GameOptions.HarderDifficulty),
 		consumableEgg: false,
 		consumableWatermelon: false,
 		canSeeClouds: true
 	  });
 	  let blocked = !isBeatable;
 	  if(!isBeatable&&!canBeSubstitutedByConsumable) {
-	    canBeSubstitutedByConsumable = checkForConsumable(goal, CollectableTypes.Egg, optionDifficulty+1);
+	    canBeSubstitutedByConsumable = checkForConsumable(goal, CollectableTypes.Egg, <number>state.gameOptions.get(GameOptions.HarderDifficulty));
 	    blocked = !canBeSubstitutedByConsumable;
 	  }
 	  if(!isBeatable&&!canBeSubstitutedByConsumable) {
-	    canBeSubstitutedByConsumable = checkForConsumable(goal, CollectableTypes.Watermelon, optionDifficulty+1);
+	    canBeSubstitutedByConsumable = checkForConsumable(goal, CollectableTypes.Watermelon, <number>state.gameOptions.get(GameOptions.HarderDifficulty));
 	    blocked = !canBeSubstitutedByConsumable;
 	  }
 	  goal.htmlImageBeatableWithHarderDifficulty.classList.toggle("show", !blocked);
@@ -328,7 +326,7 @@ function setupMenuInHTML() : void {
   for(var i:number = 0; i< difficultyNames.length; i++) {
     difficultyDropdown.appendChild(Object.assign(document.createElement("option"), { value: i, textContent: difficultyNames[i] }));
   }
-  difficultyDropdown.value = optionDifficulty.toString();
+  difficultyDropdown.value = state.gameOptions.get(GameOptions.Difficulty).toString();
   
   setupHarderDifficultyDropDown();
   
@@ -368,13 +366,13 @@ function setupHarderDifficultyDropDown(): void {
   let harderDifficultyDropdown = <HTMLSelectElement>document.getElementById("harder_difficulty_dropdown");
   harderDifficultyDropdown.textContent="";
   harderDifficultyDropdown.appendChild(Object.assign(document.createElement("option"), { value: 0, textContent: "-" }));
-  for(var i:number = optionDifficulty+1; i< difficultyNames.length; i++) {
+  for(var i:number = <number>state.gameOptions.get(GameOptions.Difficulty)+1; i< difficultyNames.length; i++) {
     harderDifficultyDropdown.appendChild(Object.assign(document.createElement("option"), { value: i, textContent: difficultyNames[i] }));
   }
-  if(optionHarderDifficulty<=optionDifficulty) {
+  if(<number>state.gameOptions.get(GameOptions.HarderDifficulty)<=<number>state.gameOptions.get(GameOptions.Difficulty)) {
     harderDifficultyDropdown.value = "0";
   } else {
-    harderDifficultyDropdown.value = optionHarderDifficulty.toString();
+    harderDifficultyDropdown.value = state.gameOptions.get(GameOptions.HarderDifficulty).toString();
   }
   if(!harderDifficultyDropdown.value) {
     harderDifficultyDropdown.value = difficultyGlitched.toString();
@@ -700,7 +698,7 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
   let combinedFuncText = "";
   for(let [key, funcString] of goal.getRulesAsStrings({
 	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
-	  difficulty: optionDifficulty,
+	  difficulty: <number>state.gameOptions.get(GameOptions.Difficulty),
 	  consumableEgg: false,
 	  consumableWatermelon: false,
 	  canSeeClouds: true
@@ -751,7 +749,7 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
 		    //Evaluate rule with all items set to max but the one beeing testet remaining at current state
 		    {collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map((
 				[key, c])=>[key, key==collectable.collectableType?c.value.get():c.maxValue?c.maxValue:true])),
-			  difficulty: optionDifficulty,
+			  difficulty: <number>state.gameOptions.get(GameOptions.Difficulty),
 			  consumableEgg: false,
 			  consumableWatermelon: false,
 			  canSeeClouds: true
@@ -816,7 +814,7 @@ function updateAllWorldGoals() : void {
 
 function onDifficultyChanged(): void {
   let difficultyDropdown = <HTMLSelectElement>document.getElementById("difficulty_dropdown");
-  optionDifficulty = parseInt( difficultyDropdown.value );
+  state.gameOptions.set(GameOptions.Difficulty, parseInt( difficultyDropdown.value ));
   window.localStorage.setItem(difficultyStorage,difficultyDropdown.value);
   updateAllWorldGoals();
   setupHarderDifficultyDropDown();
@@ -824,7 +822,7 @@ function onDifficultyChanged(): void {
 
 function onHarderDifficultyChanged(): void {
   let harderDifficultyDropdown = <HTMLSelectElement>document.getElementById("harder_difficulty_dropdown");
-  optionHarderDifficulty = parseInt( harderDifficultyDropdown.value );
+  state.gameOptions.set(GameOptions.HarderDifficulty,parseInt( harderDifficultyDropdown.value ));
   window.localStorage.setItem(showHardModeStorage,harderDifficultyDropdown.value);
   updateAllWorldGoals();
 }

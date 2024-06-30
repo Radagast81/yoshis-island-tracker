@@ -64,6 +64,7 @@ export const enum GameOptions {
   Goal = "Goal",
   LuigiPiecesRequired = "Luigi Pieces Required",
   Difficulty = "Difficulty",
+  HarderDifficulty = "Harder Difficulty",
   ExtraLevel = "Extra Level",
   MinigameBandit = "Minigame Bandit",
   MinigameBonus = "Minigame Bonus",

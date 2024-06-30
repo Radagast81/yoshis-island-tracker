@@ -61,7 +61,7 @@
 					</label>
 					<br/>
 					<label class="lastElementOfGroup">Show harder difficulty beatability:<img class="infoIcon" title="Enabling this option will show little chain chomp warning signs on the checks, that can be beaten but aren't in logic."></img>
-					  <select name="harder_difficulty_dropdown" id="harder_difficulty_dropdown" onchange="onHarderDifficultyChanged()"></select>
+					  <select name="harder_difficulty_dropdown" id="harder_difficulty_dropdown" onchange="onHarderDifficultyChanged()" gameOption="Harder Difficulty"></select>
 					</label>
 					<br/>
 					<button id="btnResetLayout" onclick="resetCollectableList()" class="lastElementOfGroup" title="Order of collectable items can be adjusted by drag & drop. Use this button to reset it to it's default.">Reset Layout</button>
@@ -83,7 +83,7 @@
 					<br/>
 					<label class="dropdown lastElementOfGroup">
 					  Stage Logic<img class="infoIcon" title="'All known' is no real option, but mark minimal requirements for the checks that are considered out of logic even for expert mode."></img>:
-					  <select name="difficulty_dropdown" id="difficulty_dropdown" onchange="onDifficultyChanged()"></select>
+					  <select name="difficulty_dropdown" id="difficulty_dropdown" onchange="onDifficultyChanged()" gameOption="Difficulty"></select>
 					</label>
 					<br />
 					<input type="checkbox" id="chkExtraLevel" name="chkExtraLevel" onchange="onInputElementChanged(this)" gameOption="Extra Level" checked>
