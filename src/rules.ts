@@ -1,14 +1,10 @@
 import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState } from "./model/types";
-
 abstract class WorldGoal {
   rules: (() => boolean)[];
   abstract getId() : string;
 }
 abstract class Boss {
   rules: (() => boolean)[];
-}
-abstract class Collectable {
-  value: boolean|number;
 }
 abstract class BowserCastleRoute {
   rules: (() => boolean)[];

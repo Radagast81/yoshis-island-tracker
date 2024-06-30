@@ -1,20 +1,60 @@
 import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState, GameOptions } from "./model/types";
 
+class Observable<T> {
+  private value: T;
+  private changeListener: {(value: T): void}[] = [];
+  set(value:T): void {
+    let changed: boolean = (value !== this.value);
+	this.value = value;
+	if(changed)
+	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(value));
+  }
+  get(): T {
+    return this.value;
+  }
+  addChangeListener(listener: {(value: T): void }): number {
+    return this.changeListener.push(listener) - 1;
+  }
+  
+  removeChangeListener(index: number) : void {
+    this.changeListener[index] = null;
+  }
+}
+class ObservableMap<S,T> {
+  private map: Map<S,T> = new Map<S,T>();
+  private changeListener: {(key: S, value: T): void }[] = [];
+  
+  set(key: S, value: T): void {
+    let changed = this.map.get(key) !== value;
+    this.map.set(key, value);
+	if(changed) 
+	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(key, value));
+  }
+  
+  get(key: S): T {
+    return this.map.get(key);
+  }
+  addChangeListener(listener: {(key: S, value: T): void }): number {
+    return this.changeListener.push(listener) - 1;
+  }
+  
+  removeChangeListener(index: number) : void {
+    this.changeListener[index] = null;
+  }
+}
 abstract class WorldLevel {
   readonly world: number;
   readonly level: number;
   readonly name: string;
+  readonly locked: Observable<boolean>;
+  readonly boss : Observable<Boss>;
   goals: Map<WorldGoalTypes,WorldGoal> = new Map<WorldGoalTypes,WorldGoal>();
   abstract getId() : string;
   abstract isBossLevel() : boolean;
   abstract isBowserLevel() : boolean;
   abstract toggleGoalsCompleted() : void;
   abstract switchBossWithLevel(other: WorldLevel): void;
-  abstract addLockChangeListener(listener: {(level: WorldLevel): void }): number;
-  abstract addBossChangeListener(listener: {(level: WorldLevel): void }): number;
-  abstract isLocked() : boolean;
   abstract toggleLocked(): void;
-  abstract getBoss(): Boss;
   abstract setBossByType(bossType: BossTypes): void;
   
   htmlElement: HTMLElement;
@@ -25,13 +65,11 @@ abstract class WorldGoal {
   // included from logic.ts:
   readonly goalType: WorldGoalTypes;
   readonly level: WorldLevel;
+  readonly completed: Observable<boolean>;
   
   abstract getId() : string;
-  abstract isCompleted() : boolean;
-  abstract setCompleted(completed: boolean): void;
   abstract getRulesAsStrings(evalState: EvaluationState): Map<string, string>;
   abstract evaluateRules(evalState: EvaluationState) : boolean;
-  abstract addDataChangeListener(listener: {(goal: WorldGoal): void }): number;
   
   // addtional layout information:
   htmlImage: HTMLImageElement;
@@ -45,12 +83,11 @@ abstract class Boss {
 abstract class Collectable {
   // included from logic.ts:
   readonly collectableType: CollectableTypes;
+  readonly value: Observable<boolean|number>;
   readonly minValue? : number;
   readonly maxValue? : number;
   
   abstract toggle() : void;
-  abstract getValue(): boolean|number;
-  abstract addDataChangeListener(listener: {(collectable: Collectable): void }): number;
   
   // addtional layout information:
   htmlImage: HTMLImageElement;
@@ -60,21 +97,15 @@ abstract class State {
   readonly worldLevels: Map<string, WorldLevel>;
   readonly worldGoals: Map<string, WorldGoal>;
   readonly collectables: Map<CollectableTypes, Collectable>;
-  readonly worldOpen: Map<number, boolean>;
+  readonly worldOpen: ObservableMap<number, boolean> ;
+  readonly gameOptions: ObservableMap<GameOptions, string|number|boolean> ;
+  readonly luigiPieces: Observable<number>;
+  readonly checksTotal: Observable<number>;
+  readonly checksCompleted: Observable<number>;
+  readonly bossesTotal: Observable<number>;
+  readonly bossesCompleted: Observable<number>;
   abstract getGoal(world: number, level: number, goaltype: WorldGoalTypes) : WorldGoal;
-  abstract addWorldOpenChangeListener(listener: {(world: number, isOpen: boolean): void }): number;
   abstract toggleWorldOpen(world:number):void;
-  abstract addGameOptionChangeListener(listener: {(optionType: GameOptions, value: string|number|boolean): void }): number;
-  abstract getGameOption(optionType:GameOptions): string|number|boolean;
-  abstract setGameOption(optionType:GameOptions, value: string|number|boolean): void;
-  abstract addLuigiPiecesChangeListener(listener: {(value: number): void }): number;
-  abstract getLuigiPieces(): number;
-  abstract setLuigiPieces(value: number): void;
-  abstract addSummaryChangeListener(listener: {(checksCompleted: number, checksTotal: number, bossesCompleted: number, bossesTotal: number): void }): number;
-  abstract getChecksTotal(): number;
-  abstract getChecksCompleted(): number;
-  abstract getBossesTotal(): number;
-  abstract getBossesCompleted(): number;
 }
 abstract class Autotracker {
   abstract addConnectionStatusListener(listener: {(connectionStatus: string): void }): number;
@@ -147,7 +178,7 @@ function saveOrderToLocalStorage<Type>(array: Type[], key: string): void {
 
 function getCollectableImageURL(collectable: Collectable) : string {
 	let result : string =  "images/collectables/" + collectable.collectableType;
-	let value : number|boolean = collectable.getValue();
+	let value : number|boolean = collectable.value.get();
 	if(typeof value === "boolean") {
 		if(!<boolean>value) {
 		  result += "_unchecked";
@@ -160,7 +191,7 @@ function getCollectableImageURL(collectable: Collectable) : string {
 
 function checkForConsumable(goal: WorldGoal, target: CollectableTypes, difficulty: number): boolean {
 	let canBeSubstitutedByConsumable = goal.evaluateRules({
-	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
+	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
 	  difficulty: difficulty,
 	  consumableEgg: target===CollectableTypes.Egg,
 	  consumableWatermelon: target===CollectableTypes.Watermelon,
@@ -178,19 +209,19 @@ function updateLevelState(level: WorldLevel) {
   let isGoalOpen: boolean = false;
   for(let [goalId, goal] of level.goals.entries()) {
     if(goal.goalType==WorldGoalTypes.Game) {
-	  if(goal.level.level == 10&&!state.getGameOption(GameOptions.MinigameBonus))
+	  if(goal.level.level == 10&&!state.gameOptions.get(GameOptions.MinigameBonus))
 	    continue;
-	  if(goal.level.level < 10&&!state.getGameOption(GameOptions.MinigameBandit))
+	  if(goal.level.level < 10&&!state.gameOptions.get(GameOptions.MinigameBandit))
 	    continue;
 	}
-    if(!goal.isCompleted()) {
+    if(!goal.completed.get()) {
 	  isLevelFinished = false;
 	  if(goal.htmlImage&&!goal.htmlImage.classList.contains("blocked"))
 	    isGoalOpen = true;
 	}
   }
   level.htmlElement.classList.toggle("isFinished", isLevelFinished);
-  level.htmlElement.classList.toggle("isLocked", level.isLocked());
+  level.htmlElement.classList.toggle("isLocked", level.locked.get());
   level.htmlElement.classList.toggle("noOpenGoals", !isLevelFinished&&!isGoalOpen);
 }
 function updateAllLevelState() {
@@ -204,17 +235,17 @@ function updateWorldGoalState(goal: WorldGoal) {
   goal.htmlImageLenseNeeded.classList.remove("isNeeded");
   goal.htmlImageBeatableWithHarderDifficulty.classList.remove("show");
   let imgPath = "images/states/";
-  if(goal.isCompleted()) {
+  if(goal.completed.get()) {
 	goal.htmlImage.src = imgPath + goal.goalType + ".png";
 	goal.htmlImage.classList.toggle("completed", true);
 	goal.htmlImage.classList.toggle("blocked", false);
-  } else if(goal.level.isLocked()) {
+  } else if(goal.level.locked.get()) {
 	goal.htmlImage.src = imgPath + goal.goalType + "_unchecked.png";
 	goal.htmlImage.classList.toggle("completed", false);
 	goal.htmlImage.classList.toggle("blocked", true);  
   } else if(goal.level.isBowserLevel() &&
-      (state.getBossesCompleted() < <number>state.getGameOption(GameOptions.BowserCastleEnter) ||
-	  (state.getBossesCompleted() < <number>state.getGameOption(GameOptions.BowserCastleClear) && goal.goalType === WorldGoalTypes.LevelClear))) 
+      (state.bossesCompleted.get() < <number>state.gameOptions.get(GameOptions.BowserCastleEnter) ||
+	  (state.bossesCompleted.get() < <number>state.gameOptions.get(GameOptions.BowserCastleClear) && goal.goalType === WorldGoalTypes.LevelClear))) 
   {
 	goal.htmlImage.src = imgPath + goal.goalType + "_unchecked.png";
 	goal.htmlImage.classList.toggle("completed", false);
@@ -223,7 +254,7 @@ function updateWorldGoalState(goal: WorldGoal) {
 	goal.htmlImage.src = imgPath + goal.goalType + "_unchecked.png";
     
 	let isBeatable = goal.evaluateRules({
-	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
+	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
 	  difficulty: optionDifficulty,
 	  consumableEgg: false,
 	  consumableWatermelon: false,
@@ -243,7 +274,7 @@ function updateWorldGoalState(goal: WorldGoal) {
 	goal.htmlImage.classList.toggle("blocked", blocked);
 	if(!blocked&&optionDifficulty==0) {
 	  goal.htmlImageLenseNeeded.classList.toggle("isNeeded",!goal.evaluateRules({
-		  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
+		  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
 		  difficulty: optionDifficulty,
 		  consumableEgg: true,
 		  consumableWatermelon: true,
@@ -252,7 +283,7 @@ function updateWorldGoalState(goal: WorldGoal) {
 	}
 	if(optionShowHardMode&&!isBeatable&&optionDifficulty<difficultyGlitched) {
 	  isBeatable = goal.evaluateRules({
-		collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
+		collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
 		difficulty: difficultyGlitched,
 		consumableEgg: false,
 		consumableWatermelon: false,
@@ -304,13 +335,29 @@ function setupMenuInHTML() : void {
   }
   doSearchLevel();
   
-  state.addGameOptionChangeListener((optionType, value) => notifyGameOptionChanged(optionType, value));
+  state.gameOptions.addChangeListener((optionType, value) => notifyGameOptionChanged(optionType, value));
   copyGameOptions2State();
   
-  state.addLuigiPiecesChangeListener((value) => notifyLuigiPiecesChanged(value));
-  notifyLuigiPiecesChanged(state.getLuigiPieces());
-  state.addSummaryChangeListener((checksCompleted, checksTotal, bossesCompleted, bossesTotal)=>notifySummaryChanged(checksCompleted, checksTotal, bossesCompleted, bossesTotal));
-  notifySummaryChanged(state.getChecksCompleted(), state.getChecksTotal(), state.getBossesCompleted(), state.getBossesTotal());
+  state.luigiPieces.addChangeListener((value) => notifyLuigiPiecesChanged(value));
+  notifyLuigiPiecesChanged(state.luigiPieces.get());
+  state.checksCompleted.addChangeListener((value)=> {
+    let locState = state;
+	notifyChecksCountChanged(value, locState.checksTotal.get());
+  });
+  state.checksTotal.addChangeListener((value)=> {
+    let locState = state;
+	notifyChecksCountChanged(state.checksCompleted.get(), value);
+  });
+  notifyChecksCountChanged(state.checksCompleted.get(), state.checksTotal.get());
+  state.bossesCompleted.addChangeListener((value)=> {
+    let locState = state;
+	notifyBossCountChanged(value, locState.bossesTotal.get());
+  });
+  state.bossesTotal.addChangeListener((value)=> {
+    let locState = state;
+	notifyBossCountChanged(state.bossesCompleted.get(), value);
+  });
+  notifyBossCountChanged(state.bossesCompleted.get(), state.bossesTotal.get());
   
   (<HTMLInputElement>document.getElementById("chkSpoilerBosses")).checked = false;
 }
@@ -356,7 +403,7 @@ function setupCollectablesInHTML() : void {
 	  width: 24,
 	  height: 24
 	});
-	collectable.addDataChangeListener((col)=>updateCollectable(col));
+	collectable.value.addChangeListener((value)=>updateCollectable(collectable));
 	cellElement.append(collectable.htmlImage,collectable.htmlImageSubstitute);
 	rowElement.appendChild(cellElement);
   }
@@ -433,18 +480,18 @@ function setupWorldsInHTML() : void {
 		if (world.level>=9) {
 		  let worldLockToggle = Object.assign(document.createElement("img"), {
 		    id: "world-lock-toggle-"+worldId,
-		    className: "worldLockToggle"+(world.isLocked()?" isLocked":""),
+		    className: "worldLockToggle"+(world.locked.get()?" isLocked":""),
 		    onclick: (e:Event) => world.toggleLocked()
 		  });
 		  if(world.level==9) {
-			  world.addLockChangeListener((lvl)=>{
-				worldLockToggle.classList.toggle("isLocked", lvl.isLocked());
-				updateLevelGoals(lvl);
+			  world.locked.addChangeListener((value)=>{
+				worldLockToggle.classList.toggle("isLocked", value);
+				updateLevelGoals(world);
 			  });
 		  } else {
-			  world.addLockChangeListener((lvl)=>{
-				worldLockToggle.classList.toggle("isLocked", lvl.isLocked());
-				updateLevelState(lvl);
+			  world.locked.addChangeListener((value)=>{
+				worldLockToggle.classList.toggle("isLocked", value);
+				updateLevelState(world);
 			  });
 		  }
 		  worldLabeledIcon.appendChild(worldLockToggle);
@@ -534,22 +581,22 @@ function setupWorldsInHTML() : void {
 				height: 8,
 				onclick: (e:Event) => toggleWorldGoalCompleted(goal)
 			  });
-			  goal.addDataChangeListener((goal)=> updateWorldGoalState(goal));
+			  goal.completed.addChangeListener((value)=> updateWorldGoalState(goal));
 			  updateWorldGoalState(goal);
 			  goalsCell.append(goal.htmlImage, goal.htmlImageSubstitute,goal.htmlImageLenseNeeded,goal.htmlImageBeatableWithHarderDifficulty);
 			  goalsCol.appendChild(goalsCell);
 			}
 	        rowElement.appendChild(goalsCol);
-			world.addBossChangeListener((w)=>notifyWorldLevelBossChanged(w));
+			world.boss.addChangeListener((value)=>notifyWorldLevelBossChanged(world));
 			notifyWorldLevelBossChanged(world, false);
 		} else {
 		    updateLevelState(world);
 			for(let [goalId, goal] of world.goals.entries()) {
-			  goal.addDataChangeListener((goal)=> updateLevelState(goal.level));
+			  goal.completed.addChangeListener((value)=> updateLevelState(goal.level));
 			}
 		}
   }
-  state.addWorldOpenChangeListener((world, isOpen)=> notifyWorldIsOpenChanged(null, world, isOpen));
+  state.worldOpen.addChangeListener((world, isOpen)=> notifyWorldIsOpenChanged(null, world, isOpen));
 }
 function toggleCollectable(collectable: Collectable) : void {
     collectable.toggle();
@@ -561,7 +608,7 @@ function updateCollectable(collectable: Collectable) : void {
 }
 
 function toggleWorldGoalCompleted(goal: WorldGoal) : void {
-  goal.setCompleted(!goal.isCompleted());
+  goal.completed.set(!goal.completed.get());
 }
 function toggleAllWorldGoalCompleted(worldLevel: WorldLevel) : void {
   worldLevel.toggleGoalsCompleted();
@@ -633,7 +680,7 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
   let displayText = "";
   let combinedFuncText = "";
   for(let [key, funcString] of goal.getRulesAsStrings({
-	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.getValue()])),
+	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
 	  difficulty: optionDifficulty,
 	  consumableEgg: false,
 	  consumableWatermelon: false,
@@ -663,14 +710,14 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
 		  isCollected = true;
 		  let matches = combinedFuncText.matchAll(/.*hasEggs\(\s*(\d+)\s*(\)|,).*/g);
 		  for(let match of matches) {
-		    if(parseInt(match[1]) > <number>collectable.getValue()) {
+		    if(parseInt(match[1]) > <number>collectable.value.get()) {
 			  isCollected = false;
 			  break;
 			}
 		  }
 		} else {
 		  isNeeded = combinedFuncText.indexOf("\""+collectable.collectableType+"\"") > 0;
-		  isCollected = <boolean>collectable.getValue();
+		  isCollected = <boolean>collectable.value.get();
 		}
 		if(isNeeded&&!isCollected) {
 		  let consumableParse = combinedFuncText.match((collectable.collectableType === CollectableTypes.Egg?".*hasEggs\\(\\s*\\d+":".*\""+collectable.collectableType+"\"")+"\\s*,\\s*consumable(Egg|Watermelon).*");
@@ -684,7 +731,7 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
         collectable.htmlImage.classList.toggle("hasSubstitute", isNeeded&&!isCollected&&goal.evaluateRules(
 		    //Evaluate rule with all items set to max but the one beeing testet remaining at current state
 		    {collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map((
-				[key, c])=>[key, key==collectable.collectableType?c.getValue():c.maxValue?c.maxValue:true])),
+				[key, c])=>[key, key==collectable.collectableType?c.value.get():c.maxValue?c.maxValue:true])),
 			  difficulty: optionDifficulty,
 			  consumableEgg: false,
 			  consumableWatermelon: false,
@@ -694,12 +741,12 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
   }
   if(goal.level.isBowserLevel()) {
 	let displaySummaryBosses: HTMLElement = document.getElementById("summaryBosses");
-      (state.getBossesCompleted() >= <number>state.getGameOption(GameOptions.BowserCastleEnter) &&
-	  (state.getBossesCompleted() >= <number>state.getGameOption(GameOptions.BowserCastleClear) || goal.goalType !== WorldGoalTypes.LevelClear));
+      (state.bossesCompleted.get() >= <number>state.gameOptions.get(GameOptions.BowserCastleEnter) &&
+	  (state.bossesCompleted.get() >= <number>state.gameOptions.get(GameOptions.BowserCastleClear) || goal.goalType !== WorldGoalTypes.LevelClear));
 	displaySummaryBosses.classList.toggle("isNeeded", true);
     displaySummaryBosses.classList.toggle("isCollected", 
-      (state.getBossesCompleted() >= <number>state.getGameOption(GameOptions.BowserCastleEnter) &&
-	  (state.getBossesCompleted() >= <number>state.getGameOption(GameOptions.BowserCastleClear) || goal.goalType !== WorldGoalTypes.LevelClear)));
+      (state.bossesCompleted.get() >= <number>state.gameOptions.get(GameOptions.BowserCastleEnter) &&
+	  (state.bossesCompleted.get() >= <number>state.gameOptions.get(GameOptions.BowserCastleClear) || goal.goalType !== WorldGoalTypes.LevelClear)));
   }
 }
 function setInfoBoxText(s: string) {
@@ -810,17 +857,17 @@ function onInputElementChanged(element: Element) {
   if(gameOption) {
     if(element instanceof HTMLInputElement) {
 	  if(element.getAttribute("type")==="checkbox") {
-	    state.setGameOption(gameOption, <boolean>element.checked);
+	    state.gameOptions.set(gameOption, <boolean>element.checked);
 	  } else if(element.getAttribute("type")==="number") {
-	    state.setGameOption(gameOption, parseInt(element.value));
+	    state.gameOptions.set(gameOption, parseInt(element.value));
 	  } else if(element.getAttribute("type")==="radio") {
 	    if(element.checked)
-	      state.setGameOption(gameOption, element.value);
+	      state.gameOptions.set(gameOption, element.value);
 	  } else {
-	    state.setGameOption(gameOption, element.value);
+	    state.gameOptions.set(gameOption, element.value);
 	  }
 	} else if(element instanceof HTMLSelectElement) {
-	    state.setGameOption(gameOption, element.value);
+	    state.gameOptions.set(gameOption, element.value);
 	}
   }
 }
@@ -850,7 +897,7 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
 	  mainElement.classList.toggle("goal-Bowser", goalBowser);
 	  mainElement.classList.toggle("goal-Luigi-Pieces", !goalBowser);
 	  if(!goalBowser)
-	    state.setGameOption(GameOptions.BowserCastleClear, 255);
+	    state.gameOptions.set(GameOptions.BowserCastleClear, 255);
 	  let bowserClearElement = <HTMLInputElement>document.querySelector("[gameOption='"+GameOptions.BowserCastleClear+"']");
 	  bowserClearElement.disabled = !goalBowser;
   } else if(GameOptions.BowserCastleRoute === optionType) {
@@ -869,7 +916,7 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
 }
 
 function onLuigiPiecesChanged(element: HTMLInputElement) {
-  state.setLuigiPieces(parseInt(element.value));
+  state.luigiPieces.set(parseInt(element.value));
 }
 
 function notifyLuigiPiecesChanged(value: number) {
@@ -888,10 +935,13 @@ function updateLevelGoals(level: WorldLevel) {
   }
 }
 
-function notifySummaryChanged(checksCompleted: number, checksTotal: number, bossesCompleted: number, bossesTotal: number): void {
+function notifyChecksCountChanged(checksCompleted: number, checksTotal: number): void {
 	let displaySummaryChecks = document.getElementById("summaryChecks");
-	let displaySummaryBosses = document.getElementById("summaryBosses");
 	displaySummaryChecks.textContent = checksCompleted + " / " + checksTotal;
+}
+
+function notifyBossCountChanged(bossesCompleted: number, bossesTotal: number): void {
+	let displaySummaryBosses = document.getElementById("summaryBosses");
 	displaySummaryBosses.textContent = bossesCompleted + " / " + bossesTotal;
 	updateBowserCastleGoals();
 }
@@ -917,9 +967,9 @@ function hideContextMenu() {
 }
 
 function notifyWorldLevelBossChanged(world: WorldLevel, updateGoals: boolean=true) {
-  if(world.getBoss()&&!world.isBowserLevel()) {
+  if(world.boss.get()&&!world.isBowserLevel()) {
 	  world.htmlImage = Object.assign(world.htmlImage, {
-		src: "images/worlds/"+world.getBoss().id+".png"
+		src: "images/worlds/"+world.boss.get().id+".png"
 	  });
 	if(updateGoals)
 	  updateAllWorldGoals();

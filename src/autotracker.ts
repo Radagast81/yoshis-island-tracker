@@ -19,38 +19,73 @@ var defaultBosses =
   ,BossTypes.Boss54, BossTypes.Boss58
   ,BossTypes.Boss64];
 var optionSpoilerBosses: boolean;
-
+class Observable<T> {
+  private value: T;
+  private changeListener: {(value: T): void}[] = [];
+  set(value:T): void {
+    let changed: boolean = (value !== this.value);
+	this.value = value;
+	if(changed)
+	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(value));
+  }
+  get(): T {
+    return this.value;
+  }
+  addChangeListener(listener: {(value: T): void }): number {
+    return this.changeListener.push(listener) - 1;
+  }
+  
+  removeChangeListener(index: number) : void {
+    this.changeListener[index] = null;
+  }
+}
+class ObservableMap<S,T> {
+  private map: Map<S,T> = new Map<S,T>();
+  private changeListener: {(key: S, value: T): void }[] = [];
+  
+  set(key: S, value: T): void {
+    let changed = this.map.get(key) !== value;
+    this.map.set(key, value);
+	if(changed) 
+	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(key, value));
+  }
+  
+  get(key: S): T {
+    return this.map.get(key);
+  }
+  addChangeListener(listener: {(key: S, value: T): void }): number {
+    return this.changeListener.push(listener) - 1;
+  }
+  
+  removeChangeListener(index: number) : void {
+    this.changeListener[index] = null;
+  }
+}
 abstract class State {
   readonly worldLevels: Map<string, WorldLevel> = new Map<string, WorldLevel>();
   readonly worldGoals: Map<string, WorldGoal> = new Map<string, WorldGoal>();
   readonly collectables: Map<CollectableTypes, Collectable> = new Map<CollectableTypes, Collectable>();
+  readonly worldOpen: ObservableMap<number, boolean>;
+  readonly gameOptions: ObservableMap<GameOptions, string|number|boolean>;
+  readonly luigiPieces: Observable<number>;
   
-  abstract isWorldOpen(world:number): boolean;
-  abstract setWorldOpen(world:number, isOpen: boolean): void;
-  abstract getGameOption(optionType:GameOptions): string|number|boolean;
-  abstract setGameOption(optionType:GameOptions, value: string|number|boolean): void;
-  abstract getLuigiPieces(): number;
-  abstract setLuigiPieces(value: number): void;
   abstract getLevel(world: number, level: number) : WorldLevel;
 }
 abstract class Collectable {
-  readonly collectableType: CollectableTypes;;
-  abstract getValue(): boolean|number;
-  abstract setValue(value: boolean|number): void;
+  readonly collectableType: CollectableTypes;
+  readonly value: Observable<boolean|number>;
 }
 abstract class WorldLevel {
   readonly world: number;
   readonly level: number;
+  readonly locked: Observable<boolean>;
   goals: Map<WorldGoalTypes,WorldGoal>;
   abstract isBowserLevel() : boolean;
-  abstract setLocked(locked: boolean): void;
-  abstract isLocked() : boolean;
   abstract setBossByType(bossType: BossTypes): void 
 }
 abstract class WorldGoal {
   readonly goalType: WorldGoalTypes;
-  abstract isCompleted() : boolean;
-  abstract setCompleted(completed: boolean): void;
+  readonly completed: Observable<boolean>;
   abstract getId() : string;
 }
 
@@ -118,18 +153,18 @@ class MyAutotracker {
   
   private setCollectable(collectableType: CollectableTypes, value: boolean) {
     let collectable : Collectable = this.state.collectables.get(collectableType);
-	if(!collectable.getValue()&&value)
-	  collectable.setValue(value);
+	if(!collectable.value.get()&&value)
+	  collectable.value.set(value);
   }
   private setCollectableEgg(value: number) {
     let collectable : Collectable = this.state.collectables.get(CollectableTypes.Egg);
-	if(<number>collectable.getValue()<value)
-	  collectable.setValue(value);
+	if(<number>collectable.value.get()<value)
+	  collectable.value.set(value);
   }
   private setStateOptionIfChanged(gameOption: GameOptions, value: string|number|boolean) : void {
-	if(this.lastState.getGameOption(gameOption) !== value)
-	  this.state.setGameOption(gameOption,value);
-	this.lastState.setGameOption(gameOption,value);
+	if(this.lastState.gameOptions.get(gameOption) !== value)
+	  this.state.gameOptions.set(gameOption,value);
+	this.lastState.gameOptions.set(gameOption,value);
   }
   private notifyDataChanged(data: Map<string, RomData>) {
     let optVals: RomData = data.get("Options");
@@ -182,7 +217,7 @@ class MyAutotracker {
 		if(goal&&((!lvl.isBowserLevel())||goal.goalType != WorldGoalTypes.LevelClear)) {
 		  let targetValue : boolean = goalVals.getDataAsBoolean(offset, 1<<i);
 		  if(targetValue) {
-		    goal.setCompleted(targetValue);
+		    goal.completed.set(targetValue);
 		  }
 		}
 	  }
@@ -191,22 +226,22 @@ class MyAutotracker {
 	let extraLevelState: number = colVals.getDataAsNumber(0x21);
 	let bonusLevelState: number = colVals.getDataAsNumber(0x22);
 	for(let world=1; world<=6; world++) {
-	  if(!state.isWorldOpen(world)&&((worldState&(1<<(world-1)))!=0||world===optionStartWorld))
-	    state.setWorldOpen(world, true);
+	  if(!state.worldOpen.get(world)&&((worldState&(1<<(world-1)))!=0||world===optionStartWorld))
+	    state.worldOpen.set(world, true);
 	  let extraStage = state.worldLevels.get(world+"-E");
-	  if(extraStage.isLocked()&&(extraLevelState&(1<<(world-1)))!=0) {
-	    extraStage.setLocked(false);
+	  if(extraStage.locked.get()&&(extraLevelState&(1<<(world-1)))!=0) {
+	    extraStage.locked.set(false);
 		this.setStateOptionIfChanged(GameOptions.ExtraLevel, true);
 	  }
 	  let bonusStage = state.worldLevels.get(world+"-B");
-	  if(bonusStage.isLocked()&&(bonusLevelState&(1<<(world-1)))!=0)
-	    bonusStage.setLocked(false);
+	  if(bonusStage.locked.get()&&(bonusLevelState&(1<<(world-1)))!=0)
+	    bonusStage.locked.set(false);
 	}
 	
 	let luigiPieces: number = data.get("LuigiPieces").getDataAsNumber(0);
-	if(this.lastState.getLuigiPieces() !== luigiPieces)
-	  this.state.setLuigiPieces(luigiPieces);
-	this.lastState.setLuigiPieces(luigiPieces);
+	if(this.lastState.luigiPieces.get() !== luigiPieces)
+	  this.state.luigiPieces.set(luigiPieces);
+	this.lastState.luigiPieces.set(luigiPieces);
 	
 	let bowserDoor1: number[] = data.get("BowserCastleDoors").getDataAsNumberArray(0x00, 4);
 	let bowserDoor2: number[] = data.get("BowserCastleDoors").getDataAsNumberArray(0x04, 4);

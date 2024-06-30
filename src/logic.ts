@@ -138,28 +138,65 @@ function getActiveRule(rules: (() => boolean)[]) : () => boolean {
    return rules[i];
 }
 
+class Observable<T> {
+  private value: T;
+  private changeListener: {(value: T): void}[] = [];
+  set(value:T): void {
+    let changed: boolean = (value !== this.value);
+	this.value = value;
+	if(changed)
+	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(value));
+  }
+  constructor(value:T) {
+    this.value =value;
+  }
+  get(): T {
+    return this.value;
+  }
+  addChangeListener(listener: {(value: T): void }): number {
+    return this.changeListener.push(listener) - 1;
+  }
+  
+  removeChangeListener(index: number) : void {
+    this.changeListener[index] = null;
+  }
+}
+
+class ObservableMap<S,T> {
+  private map: Map<S,T> = new Map<S,T>();
+  private changeListener: {(key: S, value: T): void }[] = [];
+  
+  set(key: S, value: T): void {
+    let changed = this.map.get(key) !== value;
+    this.map.set(key, value);
+	if(changed) 
+	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(key, value));
+  }
+  
+  get(key: S): T {
+    return this.map.get(key);
+  }
+  addChangeListener(listener: {(key: S, value: T): void }): number {
+    return this.changeListener.push(listener) - 1;
+  }
+  
+  removeChangeListener(index: number) : void {
+    this.changeListener[index] = null;
+  }
+}
+
 class WorldLevel {
   readonly world: number;
   readonly level: number;
   readonly name: string;
-  private locked: boolean;
-  private boss : Boss;
+  readonly locked: Observable<boolean> = new Observable<boolean>(false);
+  readonly boss : Observable<Boss> = new Observable<Boss>(null);
   goals: Map<WorldGoalTypes,WorldGoal> = new Map<WorldGoalTypes,WorldGoal>();
-  private lockChangeListener: {(level: WorldLevel): void}[] = [];
-  private bossChangeListener: {(level: WorldLevel): void}[] = [];
-  
-  addLockChangeListener(listener: {(level: WorldLevel): void }): number {
-    return this.lockChangeListener.push(listener) - 1;
-  }
-  
-  removeLockChangeListener(index: number) : void {
-    this.lockChangeListener[index] = null;
-  }
   
   constructor(world: number, level: number) {
     this.world = world;
     this.level = level;
-	this.locked = level>8;
+	this.locked.set(level>8);
 	this.name = levelNames.get(this.getId());
   }
   isBossLevel() : boolean {
@@ -176,62 +213,32 @@ class WorldLevel {
   }
   
   switchBossWithLevel(other: WorldLevel): void {
-    let b = this.boss;
-	this.boss = other.boss;
-	other.boss = b;
+    let b = this.boss.get();
+	this.boss.set(other.boss.get());
+	other.boss.set(b);
   }
   
   toggleGoalsCompleted() : void {
 	let isActive = true;
 	for(let [id, goal] of this.goals.entries()) {
-	  if(!goal.isCompleted()) {
+	  if(!goal.completed.get()) {
 		   isActive = false;
 		 }
 	  }
 	for(let [id, goal] of this.goals.entries()) {
-	  goal.setCompleted(!isActive);
+	  goal.completed.set(!isActive);
 	}
   }
-  
-  setLocked(locked: boolean): void {
-    let changed: boolean = (locked !== this.locked);
-	this.locked = locked;
-	if(changed)
-	  this.lockChangeListener.filter(listener=>listener).forEach(listener=>listener(this));
-  }
-  isLocked() : boolean {
-    return this.locked;
-  }
   toggleLocked(): void {
-    this.setLocked(!this.locked);
+    this.locked.set(!this.locked.get());
   }
   isActive(): boolean {
     return this.level < 9 ||
-	  (this.level == 9 && <boolean>state.getGameOption(GameOptions.ExtraLevel)) ||
-	  (this.level == 10 && <boolean>state.getGameOption(GameOptions.MinigameBonus));
+	  (this.level == 9 && <boolean>state.gameOptions.get(GameOptions.ExtraLevel)) ||
+	  (this.level == 10 && <boolean>state.gameOptions.get(GameOptions.MinigameBonus));
   }
-  
-  setBoss(boss : Boss) : void {
-    let changed: boolean = (boss !== this.boss);
-    this.boss = boss;
-	if(changed)
-	  this.bossChangeListener.filter(listener=>listener).forEach(listener=>listener(this));
-  }
-  
   setBossByType(bossType: BossTypes): void {
-    this.setBoss(state.bosses.get(bossType));
-  }
-  
-  getBoss(): Boss {
-    return this.boss;
-  }
-  
-  addBossChangeListener(listener: {(level: WorldLevel): void }): number {
-    return this.bossChangeListener.push(listener) - 1;
-  }
-  
-  removeBossChangeListener(index: number) : void {
-    this.bossChangeListener[index] = null;
+    this.boss.set(state.bosses.get(bossType));
   }
 }
 
@@ -239,16 +246,7 @@ class WorldGoal {
   readonly level: WorldLevel;
   readonly goalType: WorldGoalTypes;
   rules: (() => boolean)[];
-  private dataChangeListener: {(goal: WorldGoal): void }[] = [];
-  private completed: boolean = false;
-  
-  addDataChangeListener(listener: {(goal: WorldGoal): void }): number {
-    return this.dataChangeListener.push(listener) - 1;
-  }
-  
-  removeDataChangeListener(index: number) : void {
-    this.dataChangeListener[index] = null;
-  }
+  readonly completed: Observable<boolean> = new Observable<boolean>(false);
   
   constructor(level: WorldLevel, goalType: WorldGoalTypes) {
     this.level = level;
@@ -256,23 +254,13 @@ class WorldGoal {
   }
   getId() : string {
     return "goal-"+this.level.getId() + "-" + this.goalType;
-  }
-  isCompleted() : boolean {
-    return this.completed;
-  }
-  setCompleted(completed: boolean): void {
-    let changed: boolean = (completed!==this.completed);
-    this.completed = completed;
-	if(changed)
-	  this.dataChangeListener.filter(listener=>listener).forEach(listener=>listener(this));
-  }
-  
+  }  
   getRules(evalState: EvaluationState) : Map<string, () => boolean> {
     evaluationState = evalState;
     let result = new Map<string, () => boolean>();
 	result.set("", getActiveRule(this.rules));
 	if(this.level.isBowserLevel()) {
-	  let optionBowserCastleRoute : BowserCastleRouteTypes = <BowserCastleRouteTypes>state.getGameOption(GameOptions.BowserCastleRoute);
+	  let optionBowserCastleRoute : BowserCastleRouteTypes = <BowserCastleRouteTypes>state.gameOptions.get(GameOptions.BowserCastleRoute);
 	  if(optionBowserCastleRoute == BowserCastleRouteTypes.DoorAll) {
 	    if(this.goalType==WorldGoalTypes.RedCoins||this.goalType==WorldGoalTypes.Flowers) {
 		  result.set(optionBowserCastleRoute, state.bowserCastleRoutes.get(BowserCastleRouteTypes.Door1).getActiveRule());
@@ -287,8 +275,8 @@ class WorldGoal {
 	    result.set(optionBowserCastleRoute, state.bowserCastleRoutes.get(optionBowserCastleRoute).getActiveRule());
 	  }
 	}
-	if(this.level.isBossLevel()&&this.goalType==WorldGoalTypes.LevelClear&&this.level.getBoss()?.id!==BossTypes.Unknown) {
-	  let boss = this.level.getBoss();
+	if(this.level.isBossLevel()&&this.goalType==WorldGoalTypes.LevelClear&&this.level.boss.get()?.id!==BossTypes.Unknown) {
+	  let boss = this.level.boss.get();
 	  result.set(boss.id, boss.getActiveRule());
 	}
     return result;
@@ -298,7 +286,7 @@ class WorldGoal {
   }
   getRulesAsStrings(evalState: EvaluationState): Map<string, string> {
     let result: Map<string, string> = new Map(Array.from(this.getRules(evalState)).map(([key, value]) => [key, this.getFunctionString(value)]));
-	if(this.level.getBoss()?.id===BossTypes.Unknown&&this.goalType==WorldGoalTypes.LevelClear) {
+	if(this.level.boss.get()?.id===BossTypes.Unknown&&this.goalType==WorldGoalTypes.LevelClear) {
 	  let unassignedBosses = state.getUnassignedBosses();
 	  let remainingBossRules = new Set(unassignedBosses.map((boss)=> {
 	    let result: string = this.getFunctionString(boss.getActiveRule());
@@ -315,7 +303,7 @@ class WorldGoal {
 	  if(rule&&!rule())
 	    return false;
 	}
-	if(this.level.getBoss()?.id===BossTypes.Unknown&&this.goalType==WorldGoalTypes.LevelClear) {
+	if(this.level.boss.get()?.id===BossTypes.Unknown&&this.goalType==WorldGoalTypes.LevelClear) {
 	  for(let boss of state.getUnassignedBosses()) {
 	    let rule = boss.getActiveRule();
 		if(!rule||rule()) {
@@ -328,7 +316,7 @@ class WorldGoal {
   }
   isActive(): boolean {
     return this.level.isActive() &&
-	  (this.goalType != WorldGoalTypes.Game || <boolean>state.getGameOption(GameOptions.MinigameBandit)|| this.level.level===10);
+	  (this.goalType != WorldGoalTypes.Game || <boolean>state.gameOptions.get(GameOptions.MinigameBandit)|| this.level.level===10);
   }
 }
 
@@ -345,40 +333,21 @@ class Boss {
 
 class Collectable {
   readonly collectableType: CollectableTypes;
-  private value: boolean|number;
+  readonly value: Observable<boolean|number>;
   readonly minValue? : number;
   readonly maxValue? : number;
-  private dataChangeListener: {(collectable: Collectable): void }[] = [];
   
   constructor(collectableType: CollectableTypes, minValue? : number, maxValue? : number) {
     this.collectableType = collectableType;
 	this.minValue = minValue;
 	this.maxValue = maxValue;
 	if(minValue)
-	  this.value = minValue;
+	  this.value = new Observable<number>(minValue);
 	else 
-	  this.value = false;
-  }
-  
-  addDataChangeListener(listener: {(collectable: Collectable): void }): number {
-    return this.dataChangeListener.push(listener) - 1;
-  }
-  
-  removeDataChangeListener(index: number) : void {
-    this.dataChangeListener[index] = null;
-  }
-  
-  setValue(value: boolean|number) {
-    let changed: boolean = (value!==this.value);
-    this.value = value;
-	if(changed)
-	  this.dataChangeListener.filter(listener=>listener).forEach(listener=>listener(this));
-  }
-  getValue(): boolean|number {
-    return this.value;
+	  this.value = new Observable<boolean>(false);
   }
   toggle(): void {
-    let value = this.value;
+    let value = this.value.get();
     if(this.maxValue) {
 	  (<number>value)++;
 	  if(<number>value>this.maxValue)
@@ -386,7 +355,7 @@ class Collectable {
 	} else {
 	  value = !(<boolean>value);
 	}
-	this.setValue(value);
+	this.value.set(value);
   }
 }
 
@@ -407,23 +376,20 @@ class State {
   readonly bosses: Map<string, Boss> = new Map<string, Boss>();
   readonly collectables: Map<CollectableTypes, Collectable> = new Map<CollectableTypes, Collectable>();
   readonly bowserCastleRoutes: Map<BowserCastleRouteTypes, BowserCastleRoute> = new Map<BowserCastleRouteTypes, BowserCastleRoute>();
-  readonly worldOpen: Map<number, boolean> = new Map<number, boolean>();
-  readonly gameOptions: Map<GameOptions, string|number|boolean> = new Map<GameOptions, string|number|boolean>();
-  private luigiPieces: number = 0;
-  private checksTotal: number = 0;
-  private checksCompleted: number = 0;
-  private bossesTotal: number = 0;
-  private bossesCompleted: number = 0;
-  private worldOpenChangeListener: {(world: number, isOpen: boolean): void }[] = [];
-  private gameOptionChangeListener: {(optionType: GameOptions, value: string|number|boolean): void }[] = [];
-  private luigiPiecesChangeListener: {(value: number): void }[] = [];
-  private summaryChangeListener: {(checksCompleted: number, checksTotal: number, bossesCompleted: number, bossesTotal: number): void }[] = [];
+  readonly worldOpen: ObservableMap<number, boolean> = new ObservableMap<number, boolean>();
+  readonly gameOptions: ObservableMap<GameOptions, string|number|boolean> = new ObservableMap<GameOptions, string|number|boolean>();
+  readonly luigiPieces: Observable<number> = new Observable<number>(0);
+  readonly checksTotal: Observable<number> = new Observable<number>(0);
+  readonly checksCompleted: Observable<number> = new Observable<number>(0);
+  readonly bossesTotal: Observable<number> = new Observable<number>(0);
+  readonly bossesCompleted: Observable<number> = new Observable<number>(0);
   
   private createGoal(level: WorldLevel, goalType: WorldGoalTypes) {
 	  let goal = new WorldGoal(level, goalType);
-	  goal.addDataChangeListener((g) => this.calculateSummaries());
+	  goal.completed.addChangeListener((value) => this.calculateSummaries());
 	  level.goals.set(goal.goalType, goal);
 	  this.worldGoals.set(goal.getId(), goal);
+	  this.gameOptions.addChangeListener((optionType, value) => this.notifyGameOptionChanged(optionType, value));
   }
   
   constructor() {
@@ -459,9 +425,9 @@ class State {
     for(let [LevelID, level] of this.worldLevels.entries()) {
 	  if(level.isBossLevel()) {
 	    if(this.gameOptions.get(GameOptions.BossShuffle)&&!level.isBowserLevel())
-		  level.setBoss(this.bosses.get(BossTypes.Unknown));
+		  level.boss.set(this.bosses.get(BossTypes.Unknown));
 		else
-		  level.setBoss(this.bosses.get(allBosses[2 * (level.world-1)+ Math.floor((level.level-1)/4)]));
+		  level.boss.set(this.bosses.get(allBosses[2 * (level.world-1)+ Math.floor((level.level-1)/4)]));
 	  }
 	}
   }
@@ -471,68 +437,14 @@ class State {
   getGoal(world: number, level: number, goalType: WorldGoalTypes) : WorldGoal {
     return this.getLevel(world, level)?.getGoal(goalType);
   }
-  
-  isWorldOpen(world:number) {
-    return this.worldOpen.get(world);
-  }
-  setWorldOpen(world:number, isOpen: boolean) {
-    let changed = this.isWorldOpen(world)!== isOpen;
-	this.worldOpen.set(world, isOpen);
-	if(changed)
-	  this.worldOpenChangeListener.filter(listener=>listener).forEach(listener=>listener(world, isOpen));
-  }
   toggleWorldOpen(world:number) {
-    this.setWorldOpen(world, !this.isWorldOpen(world));
+    this.worldOpen.set(world, !this.worldOpen.get(world));
   }
-  
-  addWorldOpenChangeListener(listener: {(world: number, isOpen: boolean): void }): number {
-    return this.worldOpenChangeListener.push(listener) - 1;
-  }
-  
-  removeWorldOpenChangeListener(index: number) : void {
-    this.worldOpenChangeListener[index] = null;
-  }
-  
-  getGameOption(optionType:GameOptions) {
-    return this.gameOptions.get(optionType);
-  }
-  setGameOption(optionType:GameOptions, value: string|number|boolean) {
-    let changed = this.getGameOption(optionType)!== value;
-	this.gameOptions.set(optionType, value);
-	if(changed) {
-	  this.gameOptionChangeListener.filter(listener=>listener).forEach(listener=>listener(optionType, value));
-	  if(GameOptions.MinigameBandit===optionType||GameOptions.MinigameBonus===optionType||GameOptions.ExtraLevel===optionType)
-	    this.calculateSummaries();
-	  if(GameOptions.BossShuffle===optionType)
-	    this.assignBosses();
-	}
-  }
-  
-  addGameOptionChangeListener(listener: {(optionType: GameOptions, value: string|number|boolean): void }): number {
-    return this.gameOptionChangeListener.push(listener) - 1;
-  }
-  
-  removeGameOptionChangeListener(index: number) : void {
-    this.gameOptionChangeListener[index] = null;
-  }
-  
-  getLuigiPieces(): number {
-    return this.luigiPieces;
-  }
-  
-  setLuigiPieces(value: number): void {
-    let changed = this.luigiPieces!== value;
-	this.luigiPieces = value;
-	if(changed)
-	  this.luigiPiecesChangeListener.filter(listener=>listener).forEach(listener=>listener(value));
-  }
-  
-  addLuigiPiecesChangeListener(listener: {(value: number): void }): number {
-    return this.luigiPiecesChangeListener.push(listener) - 1;
-  }
-  
-  removeLuigiPiecesChangeListener(index: number) : void {
-    this.luigiPiecesChangeListener[index] = null;
+  private notifyGameOptionChanged(optionType:GameOptions, value: string|number|boolean) {
+    if(GameOptions.MinigameBandit===optionType||GameOptions.MinigameBonus===optionType||GameOptions.ExtraLevel===optionType)
+      this.calculateSummaries();
+    if(GameOptions.BossShuffle===optionType)
+      this.assignBosses();
   }
   private calculateSummaries(): void {
 	let checksTotal: number = 0;
@@ -542,45 +454,19 @@ class State {
 	for(let [id, goal] of this.worldGoals.entries()) {
 	  if(goal.isActive()) {
 	    checksTotal++;
-	    if(goal.isCompleted())
+	    if(goal.completed.get())
 	      checksCompleted++;
-	      if(goal.goalType===WorldGoalTypes.LevelClear&&goal.level.isBossLevel()&&!goal.level.isBowserLevel()) {
-	  	    bossesTotal++;
-	  	    if(goal.isCompleted())
-	  	      bossesCompleted++;
-	      }
+	    if(goal.goalType===WorldGoalTypes.LevelClear&&goal.level.isBossLevel()&&!goal.level.isBowserLevel()) {
+	  	  bossesTotal++;
+	  	  if(goal.completed.get())
+	  	    bossesCompleted++;
+	    }
 	  }
 	}
-	let changed: boolean = checksTotal     != this.checksTotal
-	                    || checksCompleted != this.checksCompleted
-	                    || bossesTotal     != this.bossesTotal
-	                    || bossesCompleted != this.bossesCompleted;
-    
-	this.checksTotal     = checksTotal;
-	this.checksCompleted = checksCompleted;
-	this.bossesTotal     = bossesTotal;
-	this.bossesCompleted = bossesCompleted;
-	if(changed)
-	  this.summaryChangeListener.filter(listener=>listener).forEach(listener=>listener(checksCompleted, checksTotal, bossesCompleted, bossesTotal));
-  }
-  addSummaryChangeListener(listener: {(checksCompleted: number, checksTotal: number, bossesCompleted: number, bossesTotal: number): void }): number {
-    return this.summaryChangeListener.push(listener) - 1;
-  }
-  
-  removeSummaryChangeListener(index: number) : void {
-    this.summaryChangeListener[index] = null;
-  }
-  getChecksTotal(): number {
-    return this.checksTotal;
-  }
-  getChecksCompleted(): number {
-    return this.checksCompleted;
-  }
-  getBossesTotal(): number {
-    return this.bossesTotal;
-  }
-  getBossesCompleted(): number {
-    return this.bossesCompleted;
+	this.checksTotal.set(checksTotal);
+	this.checksCompleted.set(checksCompleted);
+	this.bossesTotal.set(bossesTotal);
+	this.bossesCompleted.set(bossesCompleted);
   }
   getUnassignedBosses(): Boss[] {
     let result: Boss[] = new Array();
@@ -589,12 +475,12 @@ class State {
 	    result.push(boss);
 	}
 	for(let [id, level] of this.worldLevels) {
-	  if(level.getBoss())
-	    result = removeItem(result, level.getBoss());
+	  if(level.boss.get())
+	    result = removeItem(result, level.boss.get());
 	}
 	return result;
   }
 }
 var state : State = new State();
 var lastState : State = new State();
-state.setGameOption(GameOptions.BowserCastleRoute, BowserCastleRouteTypes.DoorSelect);
+state.gameOptions.set(GameOptions.BowserCastleRoute, BowserCastleRouteTypes.DoorSelect);
