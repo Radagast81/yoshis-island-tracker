@@ -117,7 +117,8 @@ abstract class Autotracker {
 var optionSpoilerBosses: boolean = false;
 var state : State;
 var levelNames: Map<string, string>;
-const difficultyGlitched = 3;
+const difficultyNames = ["Strict","Loose","Expert","All known"];
+const difficultyGlitched = difficultyNames.length - 1;
 
 function getWorldGoalId(world:number, level: number, goaltype: WorldGoalTypes) : string {
   return state.getGoal(world, level, goaltype).getId();
@@ -128,7 +129,7 @@ var collectableListStorage = "YoshisIslandTrackerCollectableOrder";
 var difficultyStorage = "YoshisIslandTrackerDifficulty";
 var showHardModeStorage = "YoshisIslandTrackerShowHardMode";
 var optionDifficulty: number;
-var optionShowHardMode: boolean;
+var optionHarderDifficulty: number;
 var createAutotracker: {(): Autotracker };
 var autotracker: Autotracker;
 { 
@@ -136,7 +137,7 @@ var autotracker: Autotracker;
 	if(!window.localStorage.getItem(difficultyStorage))
 	  window.localStorage.setItem(difficultyStorage, "1");
 	optionDifficulty = parseInt(window.localStorage.getItem(difficultyStorage));
-	optionShowHardMode = window.localStorage.getItem(showHardModeStorage) === "true";
+	optionHarderDifficulty = parseInt(window.localStorage.getItem(showHardModeStorage));
 }
 
 var isGoalRequirementsHighlighted = false;
@@ -281,10 +282,10 @@ function updateWorldGoalState(goal: WorldGoal) {
 		  canSeeClouds: false
 		}));
 	}
-	if(optionShowHardMode&&!isBeatable&&optionDifficulty<difficultyGlitched) {
+	if(optionHarderDifficulty>optionDifficulty&&!isBeatable) {
 	  isBeatable = goal.evaluateRules({
 		collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
-		difficulty: difficultyGlitched,
+		difficulty: optionHarderDifficulty,
 		consumableEgg: false,
 		consumableWatermelon: false,
 		canSeeClouds: true
@@ -324,10 +325,12 @@ function initTrackerHTML() : void {
 
 function setupMenuInHTML() : void {
   let difficultyDropdown = <HTMLSelectElement>document.getElementById("difficulty_dropdown");
+  for(var i:number = 0; i< difficultyNames.length; i++) {
+    difficultyDropdown.appendChild(Object.assign(document.createElement("option"), { value: i, textContent: difficultyNames[i] }));
+  }
   difficultyDropdown.value = optionDifficulty.toString();
   
-  let checkBoxShowHardMode = <HTMLInputElement>document.getElementById("chkShowHardMode");
-  checkBoxShowHardMode.checked = optionShowHardMode;  
+  setupHarderDifficultyDropDown();
   
   let levelListElement = <HTMLElement>document.getElementById("levelList");
   for(let [id,name] of levelNames.entries()) {
@@ -360,6 +363,22 @@ function setupMenuInHTML() : void {
   notifyBossCountChanged(state.bossesCompleted.get(), state.bossesTotal.get());
   
   (<HTMLInputElement>document.getElementById("chkSpoilerBosses")).checked = false;
+}
+function setupHarderDifficultyDropDown(): void {
+  let harderDifficultyDropdown = <HTMLSelectElement>document.getElementById("harder_difficulty_dropdown");
+  harderDifficultyDropdown.textContent="";
+  harderDifficultyDropdown.appendChild(Object.assign(document.createElement("option"), { value: 0, textContent: "-" }));
+  for(var i:number = optionDifficulty+1; i< difficultyNames.length; i++) {
+    harderDifficultyDropdown.appendChild(Object.assign(document.createElement("option"), { value: i, textContent: difficultyNames[i] }));
+  }
+  if(optionHarderDifficulty<=optionDifficulty) {
+    harderDifficultyDropdown.value = "0";
+  } else {
+    harderDifficultyDropdown.value = optionHarderDifficulty.toString();
+  }
+  if(!harderDifficultyDropdown.value) {
+    harderDifficultyDropdown.value = difficultyGlitched.toString();
+  }
 }
 function copyGameOptions2State(): void {
   document.querySelectorAll("[gameOption]").forEach((element)=> {
@@ -800,12 +819,13 @@ function onDifficultyChanged(): void {
   optionDifficulty = parseInt( difficultyDropdown.value );
   window.localStorage.setItem(difficultyStorage,difficultyDropdown.value);
   updateAllWorldGoals();
+  setupHarderDifficultyDropDown();
 }
 
-function onShowHardModeChanged(): void {
-  let checkBoxShowHardMode = <HTMLInputElement>document.getElementById("chkShowHardMode");
-  optionShowHardMode = checkBoxShowHardMode.checked;
-  window.localStorage.setItem(showHardModeStorage,optionShowHardMode.toString());
+function onHarderDifficultyChanged(): void {
+  let harderDifficultyDropdown = <HTMLSelectElement>document.getElementById("harder_difficulty_dropdown");
+  optionHarderDifficulty = parseInt( harderDifficultyDropdown.value );
+  window.localStorage.setItem(showHardModeStorage,harderDifficultyDropdown.value);
   updateAllWorldGoals();
 }
 function updateSniConnectionStatus(message: string):void {
