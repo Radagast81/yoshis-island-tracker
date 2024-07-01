@@ -72,7 +72,11 @@ export const enum GameOptions {
   BowserCastleEnter = "BowserCastleEnter",
   BowserCastleClear = "BowserCastleClear",
   BossShuffle = "BossShuffle",
-  LevelShuffle = "LevelShuffle"
+  LevelShuffle = "LevelShuffle",
+  TrickGateHack = "Gate hack",
+  TrickPipeWarp = "Pipe warp",
+  TrickRedCoinDuplication = "Red Coin Duplication",
+  TrickSustainedFlutter = "Sustained Flutter"
 }
 
 export type EvaluationState = {

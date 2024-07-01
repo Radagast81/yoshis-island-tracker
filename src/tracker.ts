@@ -812,20 +812,6 @@ function updateAllWorldGoals() : void {
   }
 }
 
-function onDifficultyChanged(): void {
-  let difficultyDropdown = <HTMLSelectElement>document.getElementById("difficulty_dropdown");
-  state.gameOptions.set(GameOptions.Difficulty, parseInt( difficultyDropdown.value ));
-  window.localStorage.setItem(difficultyStorage,difficultyDropdown.value);
-  updateAllWorldGoals();
-  setupHarderDifficultyDropDown();
-}
-
-function onHarderDifficultyChanged(): void {
-  let harderDifficultyDropdown = <HTMLSelectElement>document.getElementById("harder_difficulty_dropdown");
-  state.gameOptions.set(GameOptions.HarderDifficulty,parseInt( harderDifficultyDropdown.value ));
-  window.localStorage.setItem(showHardModeStorage,harderDifficultyDropdown.value);
-  updateAllWorldGoals();
-}
 function updateSniConnectionStatus(message: string):void {
   let statusElement = document.getElementById("connectionStatus");
   if(statusElement) {
@@ -885,23 +871,40 @@ function onInputElementChanged(element: Element) {
 	    state.gameOptions.set(gameOption, element.value);
 	  }
 	} else if(element instanceof HTMLSelectElement) {
-	    state.gameOptions.set(gameOption, element.value);
+	    if(element.getAttribute("type")==="number") {
+	      state.gameOptions.set(gameOption, parseInt(element.value));
+		} else {
+	      state.gameOptions.set(gameOption, element.value);
+		}
 	}
   }
 }
 
+function updateUiElements(optionType: GameOptions, value: string|number|boolean) {
+  document.querySelectorAll("[gameOption='"+optionType+"']").forEach((element)=>{
+    if(element instanceof HTMLInputElement) {
+	  if(element.getAttribute("type")==="checkbox") {
+	    if(element.checked != <boolean>value)
+	      element.checked = <boolean>value;
+	  } else if(element.getAttribute("type")==="radio") {
+	    if(!element.checked && element.value === value.toString())
+	      element.checked = true;
+	  } else if (element.value != value.toString()) {
+	    element.value = value.toString();
+	  }
+	} else if(element instanceof HTMLSelectElement && element.value != value.toString()) {
+	  element.value = value.toString();
+	}
+  });
+}
+
 function notifyGameOptionChanged(optionType: GameOptions, value: string|number|boolean) {
   let mainElement = <HTMLElement>document.getElementById("app");
+  updateUiElements(optionType, value);
   if(GameOptions.MinigameBonus === optionType||GameOptions.MinigameBandit=== optionType||GameOptions.ExtraLevel === optionType) {
 	mainElement.classList.toggle(optionType.replace(" ","-"), <boolean>value);
-	let checkBox = <HTMLInputElement>document.querySelector("[gameOption='"+optionType+"']");
-	if(checkBox&&checkBox.checked !== value)
-	    checkBox.checked = <boolean>value;
 	updateAllLevelState();
   } else if(GameOptions.LuigiPiecesRequired === optionType||GameOptions.BowserCastleEnter === optionType||GameOptions.BowserCastleClear === optionType) {
-	let input = <HTMLInputElement>document.querySelector("[gameOption='"+optionType+"']");
-	if(input&&input.value != value.toString()) 
-	  input.value = value.toString();
 	if(GameOptions.LuigiPiecesRequired === optionType) {
 	  let displaySummary = <HTMLElement>document.getElementById("dspLuigiPiecesRequired");
 	  if(displaySummary)
@@ -909,9 +912,6 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
 	} 
   } else if(GameOptions.Goal === optionType) {
       let goalBowser = value === "0";
-	  let input = <HTMLInputElement>document.getElementById(goalBowser?"rbnGoalBowser":"rbnGoalLuigiPieces");
-	  if(input&&!input.checked)
-	    input.checked = true;
 	  mainElement.classList.toggle("goal-Bowser", goalBowser);
 	  mainElement.classList.toggle("goal-Luigi-Pieces", !goalBowser);
 	  if(!goalBowser)
@@ -919,15 +919,16 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
 	  let bowserClearElement = <HTMLInputElement>document.querySelector("[gameOption='"+GameOptions.BowserCastleClear+"']");
 	  bowserClearElement.disabled = !goalBowser;
   } else if(GameOptions.BowserCastleRoute === optionType) {
-	  let input = <HTMLInputElement>document.querySelector("[gameOption='"+optionType+"']");
-	  if(input&&input.value !== value) 
-	    input.value = <string>value;
       updateBowserCastleGoals();
   } else if(GameOptions.BossShuffle === optionType||GameOptions.LevelShuffle === optionType) {
 	mainElement.classList.toggle(optionType.replace(" ","-"), <boolean>value);
-	let checkBox = <HTMLInputElement>document.querySelector("[gameOption='"+optionType+"']");
-	if(checkBox&&checkBox.checked !== value)
-	    checkBox.checked = <boolean>value;
+  } else if(GameOptions.Difficulty === optionType) {
+    window.localStorage.setItem(difficultyStorage,value.toString());
+    updateAllWorldGoals();
+    setupHarderDifficultyDropDown();
+  } else if(GameOptions.HarderDifficulty === optionType) {
+    window.localStorage.setItem(showHardModeStorage,value.toString());
+    updateAllWorldGoals();
   } else {
     console.log(optionType+" => "+value);
   }

@@ -60,8 +60,8 @@
 					  <input class="textField" name="inputPort" id="inputPort" value="23074" type="number" size=13 onchange="onPortChanged()"/>
 					</label>
 					<br/>
-					<label class="lastElementOfGroup">Show harder difficulty beatability:<img class="infoIcon" title="Enabling this option will show little chain chomp warning signs on the checks, that can be beaten but aren't in logic."></img>
-					  <select name="harder_difficulty_dropdown" id="harder_difficulty_dropdown" onchange="onHarderDifficultyChanged()" gameOption="Harder Difficulty"></select>
+					<label class="lastElementOfGroup">Show harder difficulty beatability<img class="infoIcon" title="Enabling this option will show little chain chomp warning signs on the checks, that can be beaten but aren't in logic."></img>:
+					  <select name="harder_difficulty_dropdown" id="harder_difficulty_dropdown" onchange="onInputElementChanged(this)" gameOption="Harder Difficulty" type="number"></select>
 					</label>
 					<br/>
 					<button id="btnResetLayout" onclick="resetCollectableList()" class="lastElementOfGroup" title="Order of collectable items can be adjusted by drag & drop. Use this button to reset it to it's default.">Reset Layout</button>
@@ -83,7 +83,7 @@
 					<br/>
 					<label class="dropdown lastElementOfGroup">
 					  Stage Logic<img class="infoIcon" title="'All known' is no real option, but mark minimal requirements for the checks that are considered out of logic even for expert mode."></img>:
-					  <select name="difficulty_dropdown" id="difficulty_dropdown" onchange="onDifficultyChanged()" gameOption="Difficulty"></select>
+					  <select name="difficulty_dropdown" id="difficulty_dropdown" onchange="onInputElementChanged(this)" gameOption="Difficulty" type="number"></select>
 					</label>
 					<br />
 					<input type="checkbox" id="chkExtraLevel" name="chkExtraLevel" onchange="onInputElementChanged(this)" gameOption="Extra Level" checked>
@@ -119,6 +119,20 @@
 					<br/>
 					<input type="checkbox" id="chkShuffleBoss" name="chkShuffleBoss" onchange="onInputElementChanged(this)" gameOption="BossShuffle">
 					<label for="chkExtraLevel">Boss Shuffle<img class="infoIcon" title="In boss shuffle mode the bosses are replaced with question marks. You can change the boss by right-clicking on that icon."></img></label>
+				</div>
+				<h3>Tricks & Glitches<img class="infoIcon" title="Specify for some of the harder Tricks and Glitches if they should be included in 'All known' - logic or not."></img>:</h3>
+				<div id="tricksOptions" class="optionsGroup">
+					<input type="checkbox" id="chkTrickSustainedFlutter" name="chkTrickSustainedFlutter" onchange="onInputElementChanged(this)" gameOption="Sustained Flutter" checked>
+					<label for="chkTrickSustainedFlutter">Sustained Flutter<img class="infoIcon" title="Chaining together several (perfect) flutters to get over a very long gap without losing height."></img></label>
+					<br/>
+					<input type="checkbox" id="chkTrickGateHack" name="chkTrickGateHack" onchange="onInputElementChanged(this)" gameOption="Gate hack" checked>
+					<label for="chkTrickGateHack">Gate hack<img class="infoIcon" title="Force a gate to open from the wrong side by throwing an egg."></img></label>
+					<br/>
+					<input type="checkbox" id="chkTrickPipeWarp" name="chkTrickPipeWarp" onchange="onInputElementChanged(this)" gameOption="Pipe warp" checked>
+					<label for="chkTrickPipeWarp">Pipe warp<img class="infoIcon" title="Corrupt the game to send you to level 1-1 instead of the normal pipe's destination."></img></label>
+					<br/>
+					<input type="checkbox" id="chkTrickRedCoinDuplication" name="chkTrickRedCoinDuplication" onchange="onInputElementChanged(this)" gameOption="Red Coin Duplication" checked>
+					<label for="chkTrickRedCoinDuplication">Red Coin Duplication<img class="infoIcon" title="Tongue shy-guys carrying red-coins and respawn them to duplicate red coins."></img></label>
 				</div>
 			</div>
 		</div>
