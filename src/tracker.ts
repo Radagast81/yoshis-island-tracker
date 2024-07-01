@@ -929,6 +929,12 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
   } else if(GameOptions.HarderDifficulty === optionType) {
     window.localStorage.setItem(showHardModeStorage,value.toString());
     updateAllWorldGoals();
+  } else if(GameOptions.TrickGateHack === optionType||
+            GameOptions.TrickPipeWarp === optionType||
+			GameOptions.TrickRedCoinDuplication === optionType||
+			GameOptions.TrickSustainedFlutter === optionType) 
+  {    
+    updateAllWorldGoals();
   } else {
     console.log(optionType+" => "+value);
   }
