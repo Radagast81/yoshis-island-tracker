@@ -97,17 +97,11 @@ function getWorldGoalId(world:number, level: number, goaltype: WorldGoalTypes) :
 var collectablesPerRow = 10;
 var collectableList = Array.from(state.collectables.keys());
 const collectableListStorage = "YoshisIslandTrackerCollectableOrder";
-const storageGameOptions = "YoshisIslandTrackerOptions";
-var difficultyStorage = "YoshisIslandTrackerDifficulty";
-var showHardModeStorage = "YoshisIslandTrackerShowHardMode";
+const storageGameOption = "YoshisIslandTrackerOption";
 var createAutotracker: {(): Autotracker };
 var autotracker: Autotracker;
 { 
     collectableList = loadOrderFromLocalStorage(collectableList, collectableListStorage);
-	if(!window.localStorage.getItem(difficultyStorage))
-	  window.localStorage.setItem(difficultyStorage, "1");
-	state.gameOptions.set(GameOptions.Difficulty, parseInt(window.localStorage.getItem(difficultyStorage)));
-	state.gameOptions.set(GameOptions.HarderDifficulty, parseInt(window.localStorage.getItem(showHardModeStorage)));
 }
 
 var isGoalRequirementsHighlighted = false;
@@ -298,9 +292,9 @@ function setupMenuInHTML() : void {
   for(var i:number = 0; i< difficultyNames.length; i++) {
     difficultyDropdown.appendChild(Object.assign(document.createElement("option"), { value: i, textContent: difficultyNames[i] }));
   }
-  difficultyDropdown.value = state.gameOptions.get(GameOptions.Difficulty).toString();
+  //difficultyDropdown.value = state.gameOptions.get(GameOptions.Difficulty).toString();
   
-  setupHarderDifficultyDropDown();
+  //setupHarderDifficultyDropDown();
   
   let levelListElement = <HTMLElement>document.getElementById("levelList");
   for(let [id,name] of levelNames.entries()) {
@@ -309,7 +303,7 @@ function setupMenuInHTML() : void {
   doSearchLevel();
   
   state.gameOptions.addChangeListener((optionType, value) => notifyGameOptionChanged(optionType, value));
-  copyGameOptions2State();
+  initGameOptions();
   
   state.luigiPieces.addChangeListener((value) => notifyLuigiPiecesChanged(value));
   notifyLuigiPiecesChanged(state.luigiPieces.get());
@@ -350,9 +344,15 @@ function setupHarderDifficultyDropDown(): void {
     harderDifficultyDropdown.value = difficultyGlitched.toString();
   }
 }
-function copyGameOptions2State(): void {
+function initGameOptions(): void {
   document.querySelectorAll("[gameOption]").forEach((element)=> {
-	onInputElementChanged(element);
+    let gameOption = <GameOptions>element.getAttribute("gameOption");
+	let value: string|boolean|number = JSON.parse(window.localStorage.getItem(storageGameOption+"-"+gameOption));
+	if(value != null) {
+	  state.gameOptions.set(gameOption, value);
+	} else {
+	  onInputElementChanged(element);
+	}
   });
 }
 function setupCollectablesInHTML() : void {
@@ -828,7 +828,7 @@ function doSearchLevel() {
   resultField.textContent = result;
 }
 
-function onInputElementChanged(element: Element) {
+function onInputElementChanged(element: Element): void {
   let gameOption = <GameOptions>element.getAttribute("gameOption");
   if(gameOption) {
     if(element instanceof HTMLInputElement) {
@@ -872,6 +872,7 @@ function updateUiElements(optionType: GameOptions, value: string|number|boolean)
 
 function notifyGameOptionChanged(optionType: GameOptions, value: string|number|boolean) {
   let mainElement = <HTMLElement>document.getElementById("app");
+  window.localStorage.setItem(storageGameOption+"-"+optionType, JSON.stringify(value));
   updateUiElements(optionType, value);
   if(GameOptions.MinigameBonus === optionType||GameOptions.MinigameBandit=== optionType||GameOptions.ExtraLevel === optionType) {
 	mainElement.classList.toggle(optionType.replace(" ","-"), <boolean>value);
@@ -895,11 +896,9 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
   } else if(GameOptions.BossShuffle === optionType||GameOptions.LevelShuffle === optionType) {
 	mainElement.classList.toggle(optionType.replace(" ","-"), <boolean>value);
   } else if(GameOptions.Difficulty === optionType) {
-    window.localStorage.setItem(difficultyStorage,value.toString());
-    updateAllWorldGoals();
     setupHarderDifficultyDropDown();
+    updateAllWorldGoals();
   } else if(GameOptions.HarderDifficulty === optionType) {
-    window.localStorage.setItem(showHardModeStorage,value.toString());
     updateAllWorldGoals();
   } else if(GameOptions.TrickGateHack === optionType||
             GameOptions.TrickPipeWarp === optionType||
