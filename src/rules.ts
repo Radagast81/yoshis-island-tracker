@@ -1,25 +1,6 @@
 import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState, GameOptions } from "./model/types";
-class ObservableMap<S,T> {
-  private map: Map<S,T> = new Map<S,T>();
-  private changeListener: {(key: S, value: T): void }[] = [];
-  
-  set(key: S, value: T): void {
-    let changed = this.map.get(key) !== value;
-    this.map.set(key, value);
-	if(changed) 
-	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(key, value));
-  }
-  
-  get(key: S): T {
-    return this.map.get(key);
-  }
-  addChangeListener(listener: {(key: S, value: T): void }): number {
-    return this.changeListener.push(listener) - 1;
-  }
-  
-  removeChangeListener(index: number) : void {
-    this.changeListener[index] = null;
-  }
+abstract class ObservableMap<S,T> {
+  abstract get(key: S): T;
 }
 abstract class WorldGoal {
   rules: (() => boolean)[];

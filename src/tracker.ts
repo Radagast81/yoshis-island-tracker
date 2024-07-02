@@ -1,46 +1,17 @@
 import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState, GameOptions } from "./model/types";
 
-class Observable<T> {
-  private value: T;
-  private changeListener: {(value: T): void}[] = [];
-  set(value:T): void {
-    let changed: boolean = (value !== this.value);
-	this.value = value;
-	if(changed)
-	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(value));
-  }
-  get(): T {
-    return this.value;
-  }
-  addChangeListener(listener: {(value: T): void }): number {
-    return this.changeListener.push(listener) - 1;
-  }
-  
-  removeChangeListener(index: number) : void {
-    this.changeListener[index] = null;
-  }
+abstract class Observable<T> {
+  abstract set(value:T): void;
+  abstract get(): T;
+  abstract addChangeListener(listener: {(value: T): void }): number;
+  abstract removeChangeListener(index: number) : void;
 }
-class ObservableMap<S,T> {
-  private map: Map<S,T> = new Map<S,T>();
-  private changeListener: {(key: S, value: T): void }[] = [];
-  
-  set(key: S, value: T): void {
-    let changed = this.map.get(key) !== value;
-    this.map.set(key, value);
-	if(changed) 
-	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(key, value));
-  }
-  
-  get(key: S): T {
-    return this.map.get(key);
-  }
-  addChangeListener(listener: {(key: S, value: T): void }): number {
-    return this.changeListener.push(listener) - 1;
-  }
-  
-  removeChangeListener(index: number) : void {
-    this.changeListener[index] = null;
-  }
+abstract class ObservableMap<S,T> {
+  abstract set(key: S, value: T): void;
+  abstract get(key: S): T;
+  abstract addChangeListener(listener: {(key: S, value: T): void }): number;
+  abstract removeChangeListener(index: number) : void;
+  abstract getAll():Map<S,T>;
 }
 abstract class WorldLevel {
   readonly world: number;
@@ -125,7 +96,8 @@ function getWorldGoalId(world:number, level: number, goaltype: WorldGoalTypes) :
 }
 var collectablesPerRow = 10;
 var collectableList = Array.from(state.collectables.keys());
-var collectableListStorage = "YoshisIslandTrackerCollectableOrder";
+const collectableListStorage = "YoshisIslandTrackerCollectableOrder";
+const storageGameOptions = "YoshisIslandTrackerOptions";
 var difficultyStorage = "YoshisIslandTrackerDifficulty";
 var showHardModeStorage = "YoshisIslandTrackerShowHardMode";
 var createAutotracker: {(): Autotracker };

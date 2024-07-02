@@ -183,6 +183,9 @@ class ObservableMap<S,T> {
   removeChangeListener(index: number) : void {
     this.changeListener[index] = null;
   }
+  getAll():Map<S,T> {
+    return this.map;
+  }
 }
 
 class WorldLevel {
