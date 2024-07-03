@@ -681,11 +681,15 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
 	  ,() => has(CollectableTypes.Ski)]);
 	
     setRule(5,4, WorldGoalTypes.RedCoins,
-	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.DashedPlatform)&&has(CollectableTypes.PlatformGhost)]);
+	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.DashedPlatform)&&has(CollectableTypes.PlatformGhost)
+	  ,sameRule
+	  ,sameRule
+	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.DashedPlatform,trickRedCoinDuplication)&&has(CollectableTypes.PlatformGhost,trickSustainedFlutter)]);
     setRule(5,4, WorldGoalTypes.Flowers,
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.DashedPlatform)&&has(CollectableTypes.PlatformGhost)
 	  ,sameRule
-	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.PlatformGhost)]);
+	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.PlatformGhost)
+	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.PlatformGhost,trickSustainedFlutter)]);
     setRule(5,4, WorldGoalTypes.Stars, 
 	  [() => has(CollectableTypes.DashedStairs)&&((has(CollectableTypes.PlatformGhost)&&has(CollectableTypes.Midring))||(canSeeClouds()&&has(CollectableTypes.DashedPlatform)))
 	  ,() => has(CollectableTypes.DashedStairs)
@@ -693,7 +697,8 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
     setRule(5,4, WorldGoalTypes.LevelClear, 
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.DashedPlatform)&&has(CollectableTypes.PlatformGhost)
 	  , sameRule
-	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.PlatformGhost)]);
+	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.PlatformGhost)
+	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.PlatformGhost,trickSustainedFlutter)]);
 	
     setRule(5,5, WorldGoalTypes.RedCoins, 
 	  [() => has(CollectableTypes.MorphHelicopter)&&has(CollectableTypes.Switch)

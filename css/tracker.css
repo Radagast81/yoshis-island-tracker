@@ -4,6 +4,11 @@ body {
 	color: white;
 }
 
+.inlineImage {
+	height: 14px;
+	vertical-align: bottom;
+	margin-bottom: 1px;
+}
 label { 
 	display: inline-block; 
 }
