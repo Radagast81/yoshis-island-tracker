@@ -63,6 +63,7 @@ abstract class Collectable {
   // addtional layout information:
   htmlImage: HTMLImageElement;
   htmlImageSubstitute: HTMLImageElement;
+  htmlImageTrick: HTMLImageElement;
 }
 abstract class State {
   readonly worldLevels: Map<string, WorldLevel>;
@@ -392,8 +393,14 @@ function setupCollectablesInHTML() : void {
 	  width: 24,
 	  height: 24
 	});
+	collectable.htmlImageTrick = Object.assign(document.createElement("img"), {
+	  src: "",
+	  id:  "collectable-trick-"+i,
+      className: "collectable-trick",	  
+	  height: 24
+	});
 	collectable.value.addChangeListener((value)=>updateCollectable(collectable));
-	cellElement.append(collectable.htmlImage,collectable.htmlImageSubstitute);
+	cellElement.append(collectable.htmlImage,collectable.htmlImageSubstitute,collectable.htmlImageTrick);
 	rowElement.appendChild(cellElement);
   }
 }
@@ -664,55 +671,94 @@ function orderWorldLevel(levelOrder: string[]): void {
   doSearchLevel();
 }
 
-function setGoalRequirementsHighlights(goal: WorldGoal) : void {
+type TextExtraction = {
+  displayText: string;
+  combinedFuncText: string;
+}
+
+function extractRuleText(goal: WorldGoal, difficulty: number): TextExtraction {
   const nullText = "No items needed.";
-  let displayText = "";
-  let combinedFuncText = "";
+  let result: TextExtraction = { displayText: "", combinedFuncText: ""};
   for(let [key, funcString] of goal.getRulesAsStrings({
 	  collectables: new Map<CollectableTypes, boolean|number>(Array.from(state.collectables).map(([key, collectable])=>[key, collectable.value.get()])),
-	  difficulty: <number>state.gameOptions.get(GameOptions.Difficulty),
+	  difficulty: difficulty,
 	  consumableEgg: false,
 	  consumableWatermelon: false,
 	  canSeeClouds: true
 	}).entries()) 
   {
     if(key&&key.length>0)
-	  displayText += key+":\r\n";
+	  result.displayText += key+":\r\n";
 	if(funcString&&funcString.length) {
-	  combinedFuncText+=" && "+funcString;
-	  funcString = funcString.replaceAll(/,\s*consumable(Egg|Watermelon)\s*/g,"");
-      displayText += "   "+(funcString=="true"?nullText:funcString)+"\r\n";
+	  result.combinedFuncText+=" && "+funcString;
+	  funcString = funcString.replaceAll(/,\s*(consumable(Egg|Watermelon)|trick\w*)\s*/g,"");
+      result.displayText += "   "+(funcString=="true"?nullText:funcString)+"\r\n";
 	} else {
-      displayText += "   "+nullText+"\r\n";
+      result.displayText += "   "+nullText+"\r\n";
 	}
   }
-  displayText = displayText.replaceAll("()", "("+nullText+")");
-  setInfoBoxText(displayText);
-  if(/has(Eggs)?\s*\(/g.test(combinedFuncText)) {
+  result.displayText = result.displayText.replaceAll("()", "("+nullText+")");
+  return result;
+}
+
+function setGoalRequirementsHighlights(goal: WorldGoal) : void {
+  clearGoalRequirementsHighlights();
+  
+  let text: TextExtraction = extractRuleText(goal, <number>state.gameOptions.get(GameOptions.Difficulty));
+  let harderText: TextExtraction = { displayText: "", combinedFuncText: ""};
+  if (<number>state.gameOptions.get(GameOptions.HarderDifficulty) > <number>state.gameOptions.get(GameOptions.Difficulty)) {
+    harderText = extractRuleText(goal, <number>state.gameOptions.get(GameOptions.HarderDifficulty));
+	if(harderText.displayText !== text.displayText) {
+	  text.displayText += "\r\nHarder Logic:\r\n"+harderText.displayText;
+	}
+  }
+  
+  setInfoBoxText(text.displayText);
+  if(/has(Eggs)?\s*\(/g.test(text.combinedFuncText)) {
     isGoalRequirementsHighlighted = true;
   
     performOnAllCollectables(collectable=> {
 	    let isNeeded: boolean;
 		let isCollected: boolean;
+		let isNeededHard: boolean = <number>state.gameOptions.get(GameOptions.HarderDifficulty)!=difficultyGlitched;
 		if(collectable.collectableType === CollectableTypes.Egg) {
-		  isNeeded = combinedFuncText.indexOf("hasEggs(") >= 0;
+		  isNeeded = text.combinedFuncText.indexOf("hasEggs(") >= 0;
 		  isCollected = true;
-		  let matches = combinedFuncText.matchAll(/.*hasEggs\(\s*(\d+)\s*(\)|,).*/g);
+		  let matches = text.combinedFuncText.matchAll(/.*hasEggs\(\s*(\d+)\s*(\)|,).*/g);
 		  for(let match of matches) {
 		    if(parseInt(match[1]) > <number>collectable.value.get()) {
 			  isCollected = false;
 			  break;
 			}
 		  }
+		  if(!isNeededHard) {
+		    isNeededHard = harderText.combinedFuncText.indexOf("hasEggs(") >= 0;
+		  }
 		} else {
-		  isNeeded = combinedFuncText.indexOf("\""+collectable.collectableType+"\"") > 0;
+		  isNeeded = text.combinedFuncText.indexOf("\""+collectable.collectableType+"\"") > 0;
 		  isCollected = <boolean>collectable.value.get();
+		  if(!isNeededHard) {
+		    isNeededHard = harderText.combinedFuncText.indexOf("\""+collectable.collectableType+"\"") > 0;
+		  }
 		}
 		if(isNeeded&&!isCollected) {
-		  let consumableParse = combinedFuncText.match((collectable.collectableType === CollectableTypes.Egg?".*hasEggs\\(\\s*\\d+":".*\""+collectable.collectableType+"\"")+"\\s*,\\s*consumable(Egg|Watermelon).*");
+		  let consumableParse = text.combinedFuncText.match((collectable.collectableType === CollectableTypes.Egg?".*hasEggs\\(\\s*\\d+":".*\""+collectable.collectableType+"\"")+"\\s*,\\s*consumable(Egg|Watermelon).*");
 		  if(consumableParse) {
 		    collectable.htmlImageSubstitute.src = "images/collectables/" + consumableParse[1] + "_substitute.png";
 			collectable.htmlImageSubstitute.classList.add("hasSubstitute");
+		  }
+		  consumableParse = harderText.combinedFuncText.match((collectable.collectableType === CollectableTypes.Egg?".*hasEggs\\(\\s*\\d+":".*\""+collectable.collectableType+"\"")+"\\s*,\\s*consumable(Egg|Watermelon).*");
+		  if(consumableParse) {
+		    collectable.htmlImageSubstitute.src = "images/collectables/" + consumableParse[1] + "_substitute.png";
+			collectable.htmlImageSubstitute.classList.add("hasSubstitute");
+		  }
+		  consumableParse = harderText.combinedFuncText.match((collectable.collectableType === CollectableTypes.Egg?".*hasEggs\\(\\s*\\d+":".*\""+collectable.collectableType+"\"")+"\\s*,\\s*trick(\\w*).*");
+		  if(consumableParse) {
+		    collectable.htmlImageTrick.src = "images/collectables/" + consumableParse[1] + ".png";
+			collectable.htmlImageTrick.classList.add("hasSubstitute");
+		  } else if(!isNeededHard) {
+		    collectable.htmlImageTrick.src = "images/collectables/Hard Mode.png";
+			collectable.htmlImageTrick.classList.add("hasSubstitute");
 		  }
 		}
         collectable.htmlImage.classList.toggle("isNeeded", isNeeded);
@@ -760,6 +806,7 @@ function clearGoalRequirementsHighlights() {
      performOnAllCollectables(collectable=>{	 
 	   collectable.htmlImage.classList.remove("isNeeded","hasSubstitute","isCollected");
 	   collectable.htmlImageSubstitute.classList.remove("hasSubstitute");
+	   collectable.htmlImageTrick.classList.remove("hasSubstitute");
 	 });
 	 let displaySummaryBosses: HTMLElement = document.getElementById("summaryBosses");
 	 displaySummaryBosses.classList.toggle("isNeeded", false);

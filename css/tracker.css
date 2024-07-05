@@ -129,7 +129,17 @@ label.infoBoxLabel {
 	bottom: 6px;
 	z-index:1;
 }
+.collectable-trick {
+	position: absolute;
+	display: none;
+	right: 2px;
+	bottom: 6px;
+	z-index:1;
+}
 .collectable-substitute.hasSubstitute {
+	display: block;
+}
+.collectable-trick.hasSubstitute {
 	display: block;
 }
 .worldGoals {
