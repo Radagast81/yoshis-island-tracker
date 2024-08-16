@@ -513,7 +513,8 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
     setRule(4,3, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Switch)&&has(CollectableTypes.MorphHelicopter)
 	  ,sameRule
-	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.MorphHelicopter)]);
+	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.MorphHelicopter)
+	  ,() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.MorphHelicopter,consumableWatermelon)]);
     setRule(4,3, WorldGoalTypes.Flowers, 
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Switch)
 	  ,() => has(CollectableTypes.SpringBallLarge)]);
@@ -578,7 +579,10 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
 	  ,sameRule
 	  ,noItemsNeeded]);
     setRule(4,6, WorldGoalTypes.Game, 
-	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.SpringBallLarge)]);
+	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.SpringBallLarge)
+	  ,sameRule
+	  ,sameRule
+	  ,() => has(CollectableTypes.Key)]);
 	
     setRule(4,7, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.SpringBallLarge)
