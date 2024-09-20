@@ -403,7 +403,7 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
 	  ,sameRule
 	  ,noItemsNeeded]);
     setRule(3,4, WorldGoalTypes.LevelClear, 
-	  [() => has(CollectableTypes.Midring)
+	  [() => has(CollectableTypes.DashedPlatform)
 	  ,() => (has(CollectableTypes.Midring)||has(CollectableTypes.DashedPlatform))
 	  ,noItemsNeeded]);
 	
@@ -555,7 +555,8 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
     setRule(4,5, WorldGoalTypes.Flowers,
 	  [() => has(CollectableTypes.ChompRock)&&has(CollectableTypes.Switch)&&has(CollectableTypes.DashedPlatform)
 	  ,sameRule
-	  ,() => has(CollectableTypes.ChompRock)&&has(CollectableTypes.Switch)]);
+	  ,() => has(CollectableTypes.ChompRock)&&has(CollectableTypes.Switch)
+	  ,() => has(CollectableTypes.ChompRock)]);
     setRule(4,5, WorldGoalTypes.Stars,
 	  [() => has(CollectableTypes.ChompRock)&&has(CollectableTypes.Switch)&&has(CollectableTypes.DashedPlatform)
 	  ,sameRule
