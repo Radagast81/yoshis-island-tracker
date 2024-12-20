@@ -866,19 +866,23 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
     setRule(6,8, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.MorphHelicopter)&&has(CollectableTypes.EggPlant)
 	  ,sameRule
-	  ,() => has(CollectableTypes.MorphHelicopter)]);
+	  ,() => has(CollectableTypes.MorphHelicopter)
+	  ,() => has(CollectableTypes.MorphHelicopter,trickSustainedFlutter)]);
     setRule(6,8, WorldGoalTypes.Flowers,
 	  [() => has(CollectableTypes.MorphHelicopter)&&has(CollectableTypes.EggPlant)
 	  ,sameRule
-	  ,() => has(CollectableTypes.MorphHelicopter)]);
+	  ,() => has(CollectableTypes.MorphHelicopter)
+	  ,() => has(CollectableTypes.MorphHelicopter,trickSustainedFlutter)]);
     setRule(6,8, WorldGoalTypes.Stars,
 	  [() => has(CollectableTypes.MorphHelicopter)&&has(CollectableTypes.EggPlant)
 	  ,sameRule
-	  ,() => has(CollectableTypes.MorphHelicopter)]);
+	  ,() => has(CollectableTypes.MorphHelicopter)
+	  ,() => has(CollectableTypes.MorphHelicopter,trickSustainedFlutter)]);
     setRule(6,8, WorldGoalTypes.LevelClear, 
 	  [() => has(CollectableTypes.MorphHelicopter)&&has(CollectableTypes.EggPlant)&&has(CollectableTypes.GiantEgg)
 	  ,sameRule
-	  ,() => has(CollectableTypes.MorphHelicopter)&&has(CollectableTypes.GiantEgg)]);
+	  ,() => has(CollectableTypes.MorphHelicopter)&&has(CollectableTypes.GiantEgg)
+	  ,() => has(CollectableTypes.MorphHelicopter,trickSustainedFlutter)&&has(CollectableTypes.GiantEgg)]);
 	
     setRule(6,9, WorldGoalTypes.RedCoins, 
 	  [() => has(CollectableTypes.SpringBallLarge)&&hasEggs(3,consumableEgg)
