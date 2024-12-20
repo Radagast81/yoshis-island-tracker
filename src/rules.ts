@@ -150,7 +150,10 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
 	  ,noItemsNeeded]);
 	  
     setRule(1,6, WorldGoalTypes.RedCoins, 
-	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.FlashingEgg)&&has(CollectableTypes.MorphMoleTank)&&has(CollectableTypes.Switch)]);
+	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.FlashingEgg)&&has(CollectableTypes.MorphMoleTank)&&has(CollectableTypes.Switch)
+	  ,sameRule
+	  ,sameRule
+	  ,() => has(CollectableTypes.SpringBallLarge,trickPipeWarp)&&has(CollectableTypes.FlashingEgg,trickPipeWarp)&&has(CollectableTypes.MorphMoleTank,trickPipeWarp)&&has(CollectableTypes.Switch,trickPipeWarp)]);
     setRule(1,6, WorldGoalTypes.Flowers,
 	  [() => has(CollectableTypes.SpringBallLarge)
 	  ,sameRule
@@ -163,7 +166,8 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
     setRule(1,6, WorldGoalTypes.LevelClear, 
 	  [() => has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Beanstalk)
 	  ,sameRule
-	  ,() => has(CollectableTypes.SpringBallLarge)]);
+	  ,() => has(CollectableTypes.SpringBallLarge)
+	  ,() => has(CollectableTypes.SpringBallLarge,trickPipeWarp)]);
 
     setRule(1,7, WorldGoalTypes.RedCoins,
 	  [() => has(CollectableTypes.FlashingEgg)&&has(CollectableTypes.SpringBallSmall)&&has(CollectableTypes.ChompRock)&&has(CollectableTypes.Beanstalk)
@@ -272,12 +276,12 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
 	  [() => has(CollectableTypes.Switch)&&has(CollectableTypes.Key)&&has(CollectableTypes.DashedStairs)
 	  ,sameRule
 	  ,() => has(CollectableTypes.Switch)&&has(CollectableTypes.Key)
-	  ,() => has(CollectableTypes.Switch,trickSustainedFlutter)&&has(CollectableTypes.Key)]);
+	  ,() => has(CollectableTypes.Switch,trickSustainedFlutter)&&has(CollectableTypes.Key,trickPipeWarp)]);
     setRule(2,4, WorldGoalTypes.Flowers, 
 	  [() => has(CollectableTypes.Switch)&&has(CollectableTypes.Key)&&has(CollectableTypes.DashedStairs)
 	  ,sameRule
 	  ,() => has(CollectableTypes.Switch)&&has(CollectableTypes.Key)
-	  ,() => has(CollectableTypes.Switch,trickSustainedFlutter)&&has(CollectableTypes.Key)]);
+	  ,() => has(CollectableTypes.Switch,trickSustainedFlutter)&&has(CollectableTypes.Key,trickPipeWarp)]);
     setRule(2,4, WorldGoalTypes.Stars, 
 	  [() => has(CollectableTypes.Switch)&&has(CollectableTypes.DashedStairs)&&has(CollectableTypes.Key)&&has(CollectableTypes.Midring)
 	  ,() => has(CollectableTypes.Switch)&&has(CollectableTypes.DashedStairs)
@@ -294,7 +298,9 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
 	  ,noItemsNeeded]);
     setRule(2,5, WorldGoalTypes.Flowers, 
 	  [() => has(CollectableTypes.Key)&&has(CollectableTypes.MorphTrain)&&has(CollectableTypes.ChompRock)
-	  ,() => has(CollectableTypes.Key)&&has(CollectableTypes.MorphTrain)]);
+	  ,() => has(CollectableTypes.Key)&&has(CollectableTypes.MorphTrain)
+	  ,sameRule
+	  ,() => (has(CollectableTypes.Key,trickPipeWarp)&&has(CollectableTypes.MorphTrain,trickPipeWarp))&&((has(CollectableTypes.Key)&&has(CollectableTypes.MorphTrain))||has(CollectableTypes.Switch))]);
     setRule(2,5, WorldGoalTypes.LevelClear,
 	  [() => has(CollectableTypes.ChompRock)
 	  ,noItemsNeeded]);
@@ -419,7 +425,8 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
     setRule(3,6, WorldGoalTypes.Flowers, 
 	  [() => has(CollectableTypes.ChompRock)&&has(CollectableTypes.Beanstalk)&&has(CollectableTypes.MorphMoleTank)&&has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Switch)
 	  ,() => (has(CollectableTypes.DashedStairs)||has(CollectableTypes.Beanstalk))&&has(CollectableTypes.MorphMoleTank)&&has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Switch)
-	  ,() => has(CollectableTypes.MorphMoleTank)&&has(CollectableTypes.Switch)]);
+	  ,() => has(CollectableTypes.MorphMoleTank)&&has(CollectableTypes.Switch)
+	  ,() => has(CollectableTypes.MorphMoleTank)]);
     setRule(3,6, WorldGoalTypes.Stars, 
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.Beanstalk)&&has(CollectableTypes.MorphMoleTank)&&has(CollectableTypes.SpringBallLarge)&&has(CollectableTypes.Midring)&&has(CollectableTypes.Tulip)
 	  ,() => (has(CollectableTypes.DashedStairs)||has(CollectableTypes.Beanstalk))&&has(CollectableTypes.MorphMoleTank)&&has(CollectableTypes.SpringBallLarge)&&(has(CollectableTypes.Midring)||has(CollectableTypes.Tulip))
@@ -686,12 +693,12 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.DashedPlatform)&&has(CollectableTypes.PlatformGhost)
 	  ,sameRule
 	  ,sameRule
-	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.DashedPlatform,trickRedCoinDuplication)&&has(CollectableTypes.PlatformGhost,trickSustainedFlutter)]);
+	  ,() => has(CollectableTypes.DashedStairs,trickPipeWarp)&&has(CollectableTypes.DashedPlatform,trickRedCoinDuplication,trickPipeWarp)&&has(CollectableTypes.PlatformGhost,trickSustainedFlutter,trickPipeWarp)]);
     setRule(5,4, WorldGoalTypes.Flowers,
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.DashedPlatform)&&has(CollectableTypes.PlatformGhost)
 	  ,sameRule
 	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.PlatformGhost)
-	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.PlatformGhost,trickSustainedFlutter)]);
+	  ,() => has(CollectableTypes.DashedStairs,trickPipeWarp)&&has(CollectableTypes.PlatformGhost,trickSustainedFlutter,trickPipeWarp)]);
     setRule(5,4, WorldGoalTypes.Stars, 
 	  [() => has(CollectableTypes.DashedStairs)&&((has(CollectableTypes.PlatformGhost)&&has(CollectableTypes.Midring))||(canSeeClouds()&&has(CollectableTypes.DashedPlatform)))
 	  ,() => has(CollectableTypes.DashedStairs)
@@ -700,7 +707,7 @@ function hasEggs(i: number, ...substitutes: (()=>boolean)[]): boolean {
 	  [() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.DashedPlatform)&&has(CollectableTypes.PlatformGhost)
 	  , sameRule
 	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.PlatformGhost)
-	  ,() => has(CollectableTypes.DashedStairs)&&has(CollectableTypes.PlatformGhost,trickSustainedFlutter)]);
+	  ,() => has(CollectableTypes.DashedStairs,trickPipeWarp)&&has(CollectableTypes.PlatformGhost,trickSustainedFlutter,trickPipeWarp)]);
 	
     setRule(5,5, WorldGoalTypes.RedCoins, 
 	  [() => has(CollectableTypes.MorphHelicopter)&&has(CollectableTypes.Switch)
