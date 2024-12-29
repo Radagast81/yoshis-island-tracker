@@ -64,6 +64,7 @@ abstract class Collectable {
   htmlImage: HTMLImageElement;
   htmlImageSubstitute: HTMLImageElement;
   htmlImageTrick: HTMLImageElement;
+  htmlImageTrick2: HTMLImageElement;
 }
 abstract class State {
   readonly worldLevels: Map<string, WorldLevel>;
@@ -399,8 +400,14 @@ function setupCollectablesInHTML() : void {
       className: "collectable-trick",	  
 	  height: 24
 	});
+	collectable.htmlImageTrick2 = Object.assign(document.createElement("img"), {
+	  src: "",
+	  id:  "collectable-trick2-"+i,
+      className: "collectable-trick2",	  
+	  height: 24
+	});
 	collectable.value.addChangeListener((value)=>updateCollectable(collectable));
-	cellElement.append(collectable.htmlImage,collectable.htmlImageSubstitute,collectable.htmlImageTrick);
+	cellElement.append(collectable.htmlImage,collectable.htmlImageSubstitute,collectable.htmlImageTrick,collectable.htmlImageTrick2);
 	rowElement.appendChild(cellElement);
   }
 }
@@ -752,10 +759,14 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
 		    collectable.htmlImageSubstitute.src = "images/collectables/" + consumableParse[1] + "_substitute.png";
 			collectable.htmlImageSubstitute.classList.add("hasSubstitute");
 		  }
-		  consumableParse = harderText.combinedFuncText.match((collectable.collectableType === CollectableTypes.Egg?".*hasEggs\\(\\s*\\d+":".*\""+collectable.collectableType+"\"")+"\\s*,\\s*trick(\\w*).*");
+		  consumableParse = harderText.combinedFuncText.match((collectable.collectableType === CollectableTypes.Egg?".*hasEggs\\(\\s*\\d+":".*\""+collectable.collectableType+"\"")+"\\s*,\\s*trick(\\w*)(,\\s*trick(\\w*))?.*");
 		  if(consumableParse) {
 		    collectable.htmlImageTrick.src = "images/collectables/" + consumableParse[1] + ".png";
 			collectable.htmlImageTrick.classList.add("hasSubstitute");
+			if(consumableParse[3]&&consumableParse[3].length>0) {
+		      collectable.htmlImageTrick2.src = "images/collectables/" + consumableParse[3] + ".png";
+			  collectable.htmlImageTrick2.classList.add("hasSubstitute");
+			}
 		  } else if(!isNeededHard) {
 		    collectable.htmlImageTrick.src = "images/collectables/Hard Mode.png";
 			collectable.htmlImageTrick.classList.add("hasSubstitute");
@@ -807,6 +818,7 @@ function clearGoalRequirementsHighlights() {
 	   collectable.htmlImage.classList.remove("isNeeded","hasSubstitute","isCollected");
 	   collectable.htmlImageSubstitute.classList.remove("hasSubstitute");
 	   collectable.htmlImageTrick.classList.remove("hasSubstitute");
+	   collectable.htmlImageTrick2.classList.remove("hasSubstitute");
 	 });
 	 let displaySummaryBosses: HTMLElement = document.getElementById("summaryBosses");
 	 displaySummaryBosses.classList.toggle("isNeeded", false);

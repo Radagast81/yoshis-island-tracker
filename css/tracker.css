@@ -136,10 +136,20 @@ label.infoBoxLabel {
 	bottom: 6px;
 	z-index:1;
 }
+.collectable-trick2 {
+	position: absolute;
+	display: none;
+	right: 2px;
+	bottom: 32px;
+	z-index:1;
+}
 .collectable-substitute.hasSubstitute {
 	display: block;
 }
 .collectable-trick.hasSubstitute {
+	display: block;
+}
+.collectable-trick2.hasSubstitute {
 	display: block;
 }
 .worldGoals {
