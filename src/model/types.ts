@@ -76,7 +76,8 @@ export const enum GameOptions {
   TrickGateHack = "Gate hack",
   TrickPipeWarp = "Pipe warp",
   TrickRedCoinDuplication = "Red Coin Duplication",
-  TrickSustainedFlutter = "Sustained Flutter"
+  TrickSustainedFlutter = "Sustained Flutter",
+  SpoilerBosses = "Spoiler Bosses"
 }
 
 export type EvaluationState = {

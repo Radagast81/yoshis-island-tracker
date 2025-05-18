@@ -18,7 +18,7 @@ var defaultBosses =
   ,BossTypes.Boss44, BossTypes.Boss48
   ,BossTypes.Boss54, BossTypes.Boss58
   ,BossTypes.Boss64];
-var optionSpoilerBosses: boolean;
+  
 abstract class Observable<T> {
   abstract set(value:T): void;
   abstract get(): T;
@@ -236,7 +236,7 @@ class MyAutotracker {
 	  this.setStateOptionIfChanged(GameOptions.BossShuffle, false);
 	} else {
 	  this.setStateOptionIfChanged(GameOptions.BossShuffle, true);
-	  if(optionSpoilerBosses) {
+	  if(<boolean> this.state.gameOptions.get(GameOptions.SpoilerBosses)) {
 	    for(let i=0; i<11; i++) {
 		  this.state.getLevel(Math.floor(i/2)+1, (i%2+1)*4).setBossByType(bosses[i]);
 		}	    

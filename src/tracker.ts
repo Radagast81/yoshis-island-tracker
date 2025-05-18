@@ -87,7 +87,6 @@ abstract class Autotracker {
   abstract clearLastRecieved(): void;
 }
 
-var optionSpoilerBosses: boolean = false;
 var state : State;
 var levelNames: Map<string, string>;
 const difficultyNames = ["Strict","Loose","Expert","All known"];
@@ -335,8 +334,6 @@ function setupMenuInHTML() : void {
 	notifyBossCountChanged(state.bossesCompleted.get(), value);
   });
   notifyBossCountChanged(state.bossesCompleted.get(), state.bossesTotal.get());
-  
-  (<HTMLInputElement>document.getElementById("chkSpoilerBosses")).checked = false;
 }
 function setupHarderDifficultyDropDown(): void {
   let harderDifficultyDropdown = <HTMLSelectElement>document.getElementById("harder_difficulty_dropdown");
@@ -973,6 +970,8 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
 			GameOptions.TrickSustainedFlutter === optionType) 
   {    
     updateAllWorldGoals();
+  } else if(GameOptions.SpoilerBosses === optionType) {
+	  autotracker?.clearLastRecieved();
   } else {
     console.log(optionType+" => "+value);
   }
@@ -1041,8 +1040,4 @@ function notifyWorldLevelBossChanged(world: WorldLevel, updateGoals: boolean=tru
 function assignBoss2Level(bossType: BossTypes) {
   contextMenu4Level?.setBossByType(bossType);
   hideContextMenu();
-}
-function onSpoilerBossesChanged(checkBox: HTMLInputElement): void {
-  optionSpoilerBosses = checkBox.checked; 
-  autotracker?.clearLastRecieved();
 }
