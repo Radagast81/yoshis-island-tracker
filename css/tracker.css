@@ -429,3 +429,27 @@ img.optionToggle {
    margin-left: 1px;
    vertical-align: top;
 }
+
+.error {
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+.errorBox {
+	position: absolute;
+	width: 50vw;
+	left: 25vw;
+	top: 25vh;
+}
+
+.babyBowser {
+	position: absolute;
+	width: 15vw;
+	left: 80vw;
+	top: 50vh;
+}
+
+.hidden {
+	visibility: hidden;  
+}

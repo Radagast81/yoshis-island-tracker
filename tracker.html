@@ -7,13 +7,19 @@
 		<script type = "text/javascript" src="js/logic.js?v=1"></script>
 		<script type = "text/javascript" src="js/rules.js?v=1"></script>
 		<script type = "text/javascript" src="js/tracker.js?v=1"></script>
+		<script>
+		  function initializeTracker() {
+			document.getElementById("imgErrorBox").src = "./images/errors/JavaScript files missing.png"; 
+			initTrackerHTML();
+		  }
+		</script>
 		<link rel="stylesheet" type="text/css" href="css/tracker.css?v=3">
 		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 		<meta http-equiv="Pragma" content="no-cache" />
 		<meta http-equiv="Expires" content="0" />
 	</head>
-	<body style="background-color: black;" onLoad="initTrackerHTML()">
-		<div id="app" class="app main">
+	<body style="background-color: black;" onLoad="initializeTracker()">
+		<div id="app" class="app main hidden">
 			<div id="menuBar">
 				<label class="dropdown">
 			      Level search<img class="infoIcon" title="Enter start of level name (e.g. given by hint from archipelago) to search for the location."></img>:
@@ -51,6 +57,10 @@
 			  </div>
 			</div>
 		</div>
+		<div id="app error" class="app main error">
+				<img id="imgErrorBox" class="errorBox" src="./images/errors/JavaScript inactive.png"/>
+				<img id="imgBabybowser" class="babyBowser" src="./images/baby-bowser.gif"/>
+	    </div>
 		<div id="optionPanel" class="app options HideOptions">
 			<div id="optionsoverlay">
 			    <h3>Tracker options:</h3>

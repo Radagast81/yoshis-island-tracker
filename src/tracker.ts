@@ -278,6 +278,7 @@ function performOnAllCollectables(func: (collectable: Collectable) => void) {
 }
 
 function initTrackerHTML() : void {
+  hideErrorBox();
   setupCollectablesInHTML();
   setupWorldsInHTML();
   setupMenuInHTML();
@@ -287,6 +288,13 @@ function initTrackerHTML() : void {
   autotracker.addConnectionStatusListener(updateSniConnectionStatus);
   autotracker.addLevelOrderChangeListener(orderWorldLevel);
   onPortChanged();
+}
+
+function hideErrorBox() : void {
+	let app = <HTMLElement> document.getElementById("app"); 
+	let appError = <HTMLElement> document.getElementById("app error"); 
+	app.classList.toggle("hidden", false);
+	appError.classList.toggle("hidden", true);
 }
 
 function setupMenuInHTML() : void {
