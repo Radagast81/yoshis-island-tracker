@@ -453,3 +453,16 @@ img.optionToggle {
 .hidden {
 	visibility: hidden;  
 }
+.archipelagoStatus {
+    float: right;
+	width: 38px;
+	margin-left: 20px;
+    content: url("../images/Archipelago offline.png");
+}
+.archipelagoStatus.connected {
+    content: url(../images/Archipelago.png);
+}
+.errorDisplay {
+	color: red;
+	bold: true;
+}

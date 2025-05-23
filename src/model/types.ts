@@ -1,22 +1,22 @@
-export const enum CollectableTypes {
-	SpringBallLarge = "Spring Ball Large",
-	SpringBallSmall = "Spring Ball Small",
-	Switch = "!Switch",
+const enum CollectableTypes {
+	SpringBallLarge = "Large Spring Ball",
+	SpringBallSmall = "Spring Ball",
+	Switch = "! Switch",
 	ChompRock = "Chomp Rock",
 	SuperStar = "Super Star",
 	Beanstalk = "Beanstalk",
-	Midring = "Midring",
+	Midring = "Middle Ring",
 	DashedStairs = "Dashed Stairs",
 	DashedPlatform = "Dashed Platform",
 	Tulip = "Tulip",
 	EggPlant = "Egg Plant",
 	EggLauncher = "Egg Launcher",
-	MorphHelicopter = "Morph Helicopter",
-	MorphMoleTank = "Morph Mole Tank",
-	MorphTrain = "Morph Train",
-	MorphCar = "Morph Car",
-	MorphSubmarine = "Morph Submarine",
-	Ski = "Ski",
+	MorphHelicopter = "Helicopter Morph",
+	MorphMoleTank = "Mole Tank Morph",
+	MorphTrain = "Train Morph",
+	MorphCar = "Car Morph",
+	MorphSubmarine = "Submarine Morph",
+	Ski = "Skis",
 	Key = "Key",
 	Poochy = "Poochy",
 	PlatformGhost = "Platform Ghost",
@@ -24,20 +24,20 @@ export const enum CollectableTypes {
 	VanishingArrowWheel = "Vanishing Arrow Wheel",
 	Bucket = "Bucket",
 	Egg = "Egg",
-	FlashingEgg = "Flashing Egg",
-	GiantEgg = "Giant Egg",
+	FlashingEgg = "Flashing Eggs",
+	GiantEgg = "Giant Eggs",
 	Watermelon = "Watermelon",
-	Icemelon = "Icemelon",
-	Firemelon = "Firemelon"
+	Icemelon = "Ice Melon",
+	Firemelon = "Fire Melon"
 }
-export const enum WorldGoalTypes {
+const enum WorldGoalTypes {
 	RedCoins = "Red Coins",
 	Flowers = "Flowers",
 	Stars = "Stars",
 	LevelClear = "Level Clear",
 	Game = "Game"
 }
-export const enum BossTypes {
+const enum BossTypes {
   Boss14 = "Burt The Bashful",
   Boss18 = "Salvo The Slime",
   Boss24 = "Bigger Boo",
@@ -52,7 +52,7 @@ export const enum BossTypes {
   Boss68 = "Baby Bowser",
   Unknown = "Unknown Boss"
 }
-export const enum BowserCastleRouteTypes {
+const enum BowserCastleRouteTypes {
   DoorSelect = "Door Selectable",
   Door1 = "Door1",
   Door2 = "Door2",
@@ -60,7 +60,7 @@ export const enum BowserCastleRouteTypes {
   Door4 = "Door4",
   DoorAll = "Gaunlet"
 }
-export const enum GameOptions {
+const enum GameOptions {
   Goal = "Goal",
   LuigiPiecesRequired = "Luigi Pieces Required",
   Difficulty = "Difficulty",
@@ -77,10 +77,14 @@ export const enum GameOptions {
   TrickPipeWarp = "Pipe warp",
   TrickRedCoinDuplication = "Red Coin Duplication",
   TrickSustainedFlutter = "Sustained Flutter",
-  SpoilerBosses = "Spoiler Bosses"
+  SpoilerBosses = "Spoiler Bosses",
+  ArchipelagoURL = "ArchipelagoUrl",
+  ArchipelagoPort = "ArchipelagoPort",
+  ArchipelagoSlotName = "ArchipelagoSlotName",
+  ArchipelagoPassword = "ArchipelagoPassword"
 }
 
-export type EvaluationState = {
+type EvaluationState = {
   collectables: Map<CollectableTypes, boolean|number>;
   difficulty: number;
   consumableEgg: boolean;

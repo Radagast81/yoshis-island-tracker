@@ -1,5 +1,3 @@
-import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState, GameOptions } from "./model/types";
-
 var allGoals = [WorldGoalTypes.RedCoins,WorldGoalTypes.Flowers,WorldGoalTypes.Stars, WorldGoalTypes.LevelClear];
 var allBosses = [BossTypes.Boss14, BossTypes.Boss18
 	            ,BossTypes.Boss24, BossTypes.Boss28
@@ -162,6 +160,28 @@ class Observable<T> {
   }
 }
 
+class ObservableArray<T> {
+  private value: Array<T>;
+  private listener: {(value: Array<T>): void}[] = [];
+  set(value:Array<T>): void {
+	  this.value = value;
+	  this.listener.filter(listener=>listener).forEach(listener=>listener(value));
+  }
+  constructor(value: Array<T>) {
+    this.value =value;
+  }
+  get(): Array<T> {
+    return this.value;
+  }
+  addListener(listener: {(value: Array<T>): void }): number {
+    return this.listener.push(listener) - 1;
+  }
+  
+  removeListener(index: number) : void {
+    this.listener[index] = null;
+  }
+}
+
 class ObservableMap<S,T> {
   private map: Map<S,T> = new Map<S,T>();
   private changeListener: {(key: S, value: T): void }[] = [];
@@ -243,6 +263,10 @@ class WorldLevel {
   setBossByType(bossType: BossTypes): void {
     this.boss.set(state.bosses.get(bossType));
   }
+  // For tracker.ts - Todo: move in own class
+  htmlElement: HTMLElement;
+  htmlImage: HTMLImageElement;
+  htmlGoals: HTMLElement;
 }
 
 class WorldGoal {
@@ -321,6 +345,12 @@ class WorldGoal {
     return this.level.isActive() &&
 	  (this.goalType != WorldGoalTypes.Game || <boolean>state.gameOptions.get(GameOptions.MinigameBandit)|| this.level.level===10);
   }
+  
+  // For tracker.ts - Todo: move in own class
+  htmlImage: HTMLImageElement;
+  htmlImageSubstitute: HTMLImageElement;
+  htmlImageLenseNeeded: HTMLImageElement;
+  htmlImageBeatableWithHarderDifficulty: HTMLImageElement;
 }
 
 class Boss {
@@ -360,6 +390,12 @@ class Collectable {
 	}
 	this.value.set(value);
   }
+  
+  // For tracker.ts - Todo: move in own class
+  htmlImage: HTMLImageElement;
+  htmlImageSubstitute: HTMLImageElement;
+  htmlImageTrick: HTMLImageElement;
+  htmlImageTrick2: HTMLImageElement;
 }
 
 class BowserCastleRoute {

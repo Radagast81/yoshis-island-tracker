@@ -96,7 +96,7 @@ class SNIClient {
       this.setConnectionStatus("");
 	  return;
 	}
-    this.setConnectionStatus("Connecting");
+    this.setConnectionStatus("Connecting.");
 	
     this.webSocket = new WebSocket(this.webSocketURL);
     this.webSocket.binaryType = 'arraybuffer';
@@ -115,7 +115,7 @@ class SNIClient {
   }
   
   private onInterval(): void  {
-    if(!this.webSocket||this.webSocket.readyState != 1) {
+    if(!this.webSocket||this.webSocket.readyState != WebSocket.OPEN) {
 	  this.cleanup();
 	  this.connect();
 	} else {

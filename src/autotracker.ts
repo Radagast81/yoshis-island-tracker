@@ -1,8 +1,4 @@
-import { WorldGoalTypes, CollectableTypes, BowserCastleRouteTypes, GameOptions, BossTypes } from "./model/types";
-var allBowserCastleRoutes: BowserCastleRouteTypes[];
 var possibleGoals = [WorldGoalTypes.RedCoins,WorldGoalTypes.Flowers,WorldGoalTypes.Stars, WorldGoalTypes.LevelClear, WorldGoalTypes.Game];
-var state : State;
-var lastState : State;
 var WRAM_START = 0xF50000;
 var bowserCastleDoorBytes: number[][] = [
    [0xB8, 0x05, 0x77, 0x00],
@@ -10,7 +6,6 @@ var bowserCastleDoorBytes: number[][] = [
    [0xCD, 0x05, 0x5B, 0x00],
    [0xD3, 0x00, 0x77, 0x06]
 ];
-
 var defaultBosses = 
   [BossTypes.Boss14, BossTypes.Boss18
   ,BossTypes.Boss24, BossTypes.Boss28
@@ -18,43 +13,9 @@ var defaultBosses =
   ,BossTypes.Boss44, BossTypes.Boss48
   ,BossTypes.Boss54, BossTypes.Boss58
   ,BossTypes.Boss64];
-  
-abstract class Observable<T> {
-  abstract set(value:T): void;
-  abstract get(): T;
-}
-abstract class ObservableMap<S,T> {
-  abstract set(key: S, value: T): void;
-  abstract get(key: S): T;
-}
-abstract class State {
-  readonly worldLevels: Map<string, WorldLevel> = new Map<string, WorldLevel>();
-  readonly worldGoals: Map<string, WorldGoal> = new Map<string, WorldGoal>();
-  readonly collectables: Map<CollectableTypes, Collectable> = new Map<CollectableTypes, Collectable>();
-  readonly worldOpen: ObservableMap<number, boolean>;
-  readonly gameOptions: ObservableMap<GameOptions, string|number|boolean>;
-  readonly luigiPieces: Observable<number>;
-  
-  abstract getLevel(world: number, level: number) : WorldLevel;
-}
-abstract class Collectable {
-  readonly collectableType: CollectableTypes;
-  readonly value: Observable<boolean|number>;
-}
-abstract class WorldLevel {
-  readonly world: number;
-  readonly level: number;
-  readonly locked: Observable<boolean>;
-  goals: Map<WorldGoalTypes,WorldGoal>;
-  abstract isBowserLevel() : boolean;
-  abstract setBossByType(bossType: BossTypes): void 
-}
-abstract class WorldGoal {
-  readonly goalType: WorldGoalTypes;
-  readonly completed: Observable<boolean>;
-  abstract getId() : string;
-}
 
+const worldGateRegex = /world (\d) gate/i;
+const singleDigitRegex = /.*(\d).*/i;
 function isArrayEquals<T>(a: Array<T>, b:Array<T>): boolean {
   if(!a||!b)
     return false;
@@ -67,8 +28,19 @@ function isArrayEquals<T>(a: Array<T>, b:Array<T>): boolean {
   return true;
 }
 
-class MyAutotracker {
+function getArchipelagoLocationName(goal : WorldGoal): string {
+  let level: WorldLevel = goal.level;
+  let typeID: string = goal.goalType;
+  if(level.level === 10)
+	 typeID = "Victory";
+  if(typeID === "Game") 
+	 typeID = "Bandit Game";
+  return level.name+": "+typeID;
+}
+
+class Autotracker {
   private sniClient: SNIClient;
+  private apClient: APClient;
   private state : State;
   private lastState: State;
   private lastLevelOrder: string[];
@@ -97,6 +69,11 @@ class MyAutotracker {
     this.state = state;
 	this.lastState = lastState;
     this.sniClient = new SNIClient("ws://localhost:23074");
+    this.apClient = new APClient(this.state.gameOptions);
+	this.apClient.checkedLocations.addListener(this.notifyNewArchipelagoLocationsChecked);
+	this.apClient.itemsReceived.addListener(this.notifyArchipelagoItemList);
+	this.apClient.slotData.addChangeListener((data)=>this.notifyArchipelagoSlotDataRecieved(this, data));
+	this.apClient.allAvaillableLocations.addListener(this.notifyAllArchipelagoKnownLocations);
 	
     this.sniClient.addDataSource("Title", 0x007FC0, 0X0015);
     this.sniClient.addDataSource("Options", 0x06FC80, 0X0040);
@@ -113,11 +90,23 @@ class MyAutotracker {
     this.sniClient.addDataChangeListener((data)=>this.notifyDataChanged(data));
   }
   
+  connectToArchipelago(): void {
+	  this.apClient.connect();
+  }
+  
+  getArchipelagoConnectionStatusProperty(): Observable<string> {
+	  return this.apClient.connectionStatus;
+  }
+  
+  isConnectedToArchipelago(): Observable<boolean> {
+	  return this.apClient.isConnected;
+  }
+  
   setPort(port: number) {
     this.sniClient.setURL(port?"ws://localhost:"+port:null);
   }
   
-  private setCollectable(collectableType: CollectableTypes, value: boolean) {
+  private setCollectable(collectableType: CollectableTypes, value: boolean): void {
     let collectable : Collectable = this.state.collectables.get(collectableType);
 	if(!collectable.value.get()&&value)
 	  collectable.value.set(value);
@@ -131,6 +120,13 @@ class MyAutotracker {
 	if(this.lastState.gameOptions.get(gameOption) !== value)
 	  this.state.gameOptions.set(gameOption,value);
 	this.lastState.gameOptions.set(gameOption,value);
+  }
+  
+  setLevelList(levelList: string[]): void {
+	if(!isArrayEquals(levelList, this.lastLevelOrder)) {
+	  this.levelOrderChangeListener.filter(listener=>listener).forEach(listener=>listener(levelList));
+	}
+	this.lastLevelOrder = levelList;
   }
   private notifyDataChanged(data: Map<string, RomData>) {
     let optVals: RomData = data.get("Options");
@@ -244,16 +240,12 @@ class MyAutotracker {
 	}
 	
 	let level21RomId:number = 0x0C;
-	let levelList: string[] = data.get("Levels").getDataAsNumberArray(0, 47).map(
+	this.setLevelList(data.get("Levels").getDataAsNumberArray(0, 47).map(
 	  (id)=>(Math.floor(id/level21RomId)+1)+"-"+(id%level21RomId+1)
-	);
-	if(!isArrayEquals(levelList, this.lastLevelOrder)) {
-	  this.levelOrderChangeListener.filter(listener=>listener).forEach(listener=>listener(levelList));
-	}
-	this.lastLevelOrder = levelList;
+	));
 	
-	
-	/*let curNumber = Array.from(data.get("All").data);
+	/* Code Snippet to search for changes in SNES-Data
+	let curNumber = Array.from(data.get("All").data);
 	
 	if(!this.diffNumber)
 	  this.diffNumber = new Array(curNumber.length);
@@ -272,5 +264,92 @@ class MyAutotracker {
 	this.lastNumber = curNumber;*/
 	
   }
+  private notifyArchipelagoItemList(collectables: Array<string>): void {
+	  let eggs: number = 1;
+	  let luigiPieces: number = 0;
+	  let worldsFound: number = 0;
+	  for(let collectable of collectables) {
+        let col : Collectable = this.state.collectables.get(<CollectableTypes> collectable);
+	    
+		if(col) {
+			col.value.set(true);
+			continue;
+		} 
+		if (collectable === "Egg Capacity Upgrade"&& eggs < 6) {
+			eggs++;
+			continue;
+		} 
+		if (collectable === "Piece of Luigi") {
+			luigiPieces++;
+			continue;
+		} 
+		
+		let world:number = 0;
+		let regMatch = collectable.match(singleDigitRegex);
+		if(regMatch)
+			world = ~~regMatch[1];
+		if(collectable.match(worldGateRegex)) {
+			worldsFound++;
+			this.state.worldOpen.set(world, true);
+			continue;
+		}
+		if(collectable.startsWith("Extra ")) {
+			if(world > 0) 
+				this.state.getLevel(world, 9).locked.set(false);
+			else { // Extra Panel
+				for (let i: number = 1; i<=6; i++)
+				  this.state.getLevel(i, 9).locked.set(false);
+			}
+			continue;
+		}
+		if(collectable.startsWith("Bonus ")) {
+			if(world > 0) 
+				this.state.getLevel(world, 10).locked.set(false);
+			else { // Bonus Panel
+				for (let i: number = 1; i<=6; i++)
+				  this.state.getLevel(i, 10).locked.set(false);
+			}
+			continue;
+		}
+	  }
+	  
+      let colEgg: Collectable = this.state.collectables.get(CollectableTypes.Egg);
+	  if(<number>colEgg.value.get()<eggs)
+	    colEgg.value.set(eggs);
+	  if(this.state.luigiPieces.get() < luigiPieces) {
+		  this.state.luigiPieces.set(luigiPieces);
+	  }
+	  if(worldsFound>=5) {
+		  // 5 world gates found - last one must be startWorld so open that up too
+		  for (let i: number = 1; i<=6; i++)
+			this.state.worldOpen.set(i, true);
+	  }
+  }
+  private notifyNewArchipelagoLocationsChecked(locations: Array<string>): void {
+	  this.state.worldGoals.forEach((goal: WorldGoal, key: string) => {
+			  if(locations.indexOf(getArchipelagoLocationName(goal))>-1) {
+				   goal.completed.set(true);
+			  }
+	  });
+  }
+  private notifyArchipelagoSlotDataRecieved(tracker: Autotracker, slotData: any): void {
+	  if(slotData) {
+		  let levelList: string[] = new Array();
+		  for(let world: number = 1; world<=6; world++) {
+			  for(let level: number = 1; level<=8; level++) {
+				  let pos: number = slotData["world_"+world][level-1];
+				  levelList.push((Math.floor(pos/12)+1)+"-"+(pos%12+1));
+			  }
+		  }
+		  tracker.setLevelList(levelList);
+	  }
+  }
+  private notifyAllArchipelagoKnownLocations(locations: Array<string>): void {
+	  let hasBanditGame = locations.indexOf(getArchipelagoLocationName(this.state.getGoal(1, 3, WorldGoalTypes.Game))) > -1;
+	  let hasExtraLevel = locations.indexOf(getArchipelagoLocationName(this.state.getGoal(1, 9, WorldGoalTypes.LevelClear))) > -1;
+	  let hasBonusLevel = locations.indexOf(getArchipelagoLocationName(this.state.getGoal(1, 10, WorldGoalTypes.Game))) > -1;
+	  this.state.gameOptions.set(GameOptions.ExtraLevel, hasExtraLevel);
+	  this.state.gameOptions.set(GameOptions.MinigameBandit, hasBanditGame);
+	  this.state.gameOptions.set(GameOptions.MinigameBonus, hasBonusLevel);
+  }
 }
-var createAutotracker = () => { return new MyAutotracker(); }

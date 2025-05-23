@@ -1,94 +1,3 @@
-import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState, GameOptions } from "./model/types";
-
-abstract class Observable<T> {
-  abstract set(value:T): void;
-  abstract get(): T;
-  abstract addChangeListener(listener: {(value: T): void }): number;
-  abstract removeChangeListener(index: number) : void;
-}
-abstract class ObservableMap<S,T> {
-  abstract set(key: S, value: T): void;
-  abstract get(key: S): T;
-  abstract addChangeListener(listener: {(key: S, value: T): void }): number;
-  abstract removeChangeListener(index: number) : void;
-  abstract getAll():Map<S,T>;
-}
-abstract class WorldLevel {
-  readonly world: number;
-  readonly level: number;
-  readonly name: string;
-  readonly locked: Observable<boolean>;
-  readonly boss : Observable<Boss>;
-  goals: Map<WorldGoalTypes,WorldGoal> = new Map<WorldGoalTypes,WorldGoal>();
-  abstract getId() : string;
-  abstract isBossLevel() : boolean;
-  abstract isBowserLevel() : boolean;
-  abstract toggleGoalsCompleted() : void;
-  abstract switchBossWithLevel(other: WorldLevel): void;
-  abstract toggleLocked(): void;
-  abstract setBossByType(bossType: BossTypes): void;
-  
-  htmlElement: HTMLElement;
-  htmlImage: HTMLImageElement;
-  htmlGoals: HTMLElement;
-}
-abstract class WorldGoal {
-  // included from logic.ts:
-  readonly goalType: WorldGoalTypes;
-  readonly level: WorldLevel;
-  readonly completed: Observable<boolean>;
-  
-  abstract getId() : string;
-  abstract getRulesAsStrings(evalState: EvaluationState): Map<string, string>;
-  abstract evaluateRules(evalState: EvaluationState) : boolean;
-  
-  // addtional layout information:
-  htmlImage: HTMLImageElement;
-  htmlImageSubstitute: HTMLImageElement;
-  htmlImageLenseNeeded: HTMLImageElement;
-  htmlImageBeatableWithHarderDifficulty: HTMLImageElement;
-}
-abstract class Boss {
-  readonly id: BossTypes;
-}
-abstract class Collectable {
-  // included from logic.ts:
-  readonly collectableType: CollectableTypes;
-  readonly value: Observable<boolean|number>;
-  readonly minValue? : number;
-  readonly maxValue? : number;
-  
-  abstract toggle() : void;
-  
-  // addtional layout information:
-  htmlImage: HTMLImageElement;
-  htmlImageSubstitute: HTMLImageElement;
-  htmlImageTrick: HTMLImageElement;
-  htmlImageTrick2: HTMLImageElement;
-}
-abstract class State {
-  readonly worldLevels: Map<string, WorldLevel>;
-  readonly worldGoals: Map<string, WorldGoal>;
-  readonly collectables: Map<CollectableTypes, Collectable>;
-  readonly worldOpen: ObservableMap<number, boolean> ;
-  readonly gameOptions: ObservableMap<GameOptions, string|number|boolean> ;
-  readonly luigiPieces: Observable<number>;
-  readonly checksTotal: Observable<number>;
-  readonly checksCompleted: Observable<number>;
-  readonly bossesTotal: Observable<number>;
-  readonly bossesCompleted: Observable<number>;
-  abstract getGoal(world: number, level: number, goaltype: WorldGoalTypes) : WorldGoal;
-  abstract toggleWorldOpen(world:number):void;
-}
-abstract class Autotracker {
-  abstract addConnectionStatusListener(listener: {(connectionStatus: string): void }): number;
-  abstract addLevelOrderChangeListener(listener: {(order: string[]): void }): number;
-  abstract setPort(port: number): void;
-  abstract clearLastRecieved(): void;
-}
-
-var state : State;
-var levelNames: Map<string, string>;
 const difficultyNames = ["Strict","Loose","Expert","All known"];
 const difficultyGlitched = difficultyNames.length - 1;
 
@@ -99,7 +8,6 @@ var collectablesPerRow = 10;
 var collectableList = Array.from(state.collectables.keys());
 const collectableListStorage = "YoshisIslandTrackerCollectableOrder";
 const storageGameOption = "YoshisIslandTrackerOption";
-var createAutotracker: {(): Autotracker };
 var autotracker: Autotracker;
 { 
     collectableList = loadOrderFromLocalStorage(collectableList, collectableListStorage);
@@ -283,9 +191,12 @@ function initTrackerHTML() : void {
   setupMenuInHTML();
   setupBossChoiceContextMenu();
   resetLogicInfobox();
-  autotracker = createAutotracker();
+  autotracker = new Autotracker();
   autotracker.addConnectionStatusListener(updateSniConnectionStatus);
   autotracker.addLevelOrderChangeListener(orderWorldLevel);
+  autotracker.isConnectedToArchipelago().addChangeListener(notifyArchipelagoConnectionChanged);
+  autotracker.getArchipelagoConnectionStatusProperty().addChangeListener(notifyArchipelagoConnectionStatusChanged);
+  
   onPortChanged();
 }
 
@@ -972,6 +883,8 @@ function notifyGameOptionChanged(optionType: GameOptions, value: string|number|b
     updateAllWorldGoals();
   } else if(GameOptions.SpoilerBosses === optionType) {
 	  autotracker?.clearLastRecieved();
+  } else if((<string> optionType).startsWith("Archipelago")) {
+	  // ignore this is processed in apClient
   } else {
     console.log(optionType+" => "+value);
   }
@@ -1008,6 +921,18 @@ function notifyBossCountChanged(bossesCompleted: number, bossesTotal: number): v
 	updateBowserCastleGoals();
 }
 
+function notifyArchipelagoConnectionChanged(isConnected: boolean) {
+  (<HTMLElement>document.getElementById("imgArchipelago"))?.classList.toggle("connected");
+}
+function notifyArchipelagoConnectionStatusChanged(connectionStatus: string) {
+  let errorText = connectionStatus?.startsWith("Error: ")?connectionStatus:"";
+  let errorBox: HTMLElement = (<HTMLElement>document.getElementById("archipelagoConnectionError"));
+  
+  if(errorBox) {
+    errorBox.textContent = errorText;
+	errorBox.classList.toggle("hidden", errorText.length < 1);
+  }
+}
 function toggleOptionMenu() {
   let mainElement = <HTMLElement>document.getElementById("optionPanel");
   mainElement.classList.toggle("HideOptions");

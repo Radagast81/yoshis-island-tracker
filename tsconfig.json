@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-	"module": "preserve",
+	"module": "none",
 	"lib": ["es2021","dom"],
 	"outDir": "js",
     "noImplicitAny": true,

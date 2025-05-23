@@ -1,25 +1,3 @@
-import { WorldGoalTypes, BossTypes, BowserCastleRouteTypes, CollectableTypes, EvaluationState, GameOptions } from "./model/types";
-abstract class ObservableMap<S,T> {
-  abstract get(key: S): T;
-}
-abstract class WorldGoal {
-  rules: (() => boolean)[];
-  abstract getId() : string;
-}
-abstract class Boss {
-  rules: (() => boolean)[];
-}
-abstract class BowserCastleRoute {
-  rules: (() => boolean)[];
-}
-abstract class State {
-  readonly bosses: Map<string, Boss>;
-  readonly bowserCastleRoutes: Map<BowserCastleRouteTypes, BowserCastleRoute>;
-  readonly gameOptions: ObservableMap<GameOptions, string|number|boolean>;
-  abstract getGoal(world: number, level: number, goaltype: WorldGoalTypes) : WorldGoal;
-}
-var state : State;
-var evaluationState: EvaluationState;
 function setRule(world: number, level: number, goaltype: WorldGoalTypes, rules: (() => boolean)[]) : void {
     let goal = state.getGoal(world, level, goaltype);
     if(goal.rules)

@@ -3,6 +3,7 @@
 	<head>
 		<title>Yoshi's Island Tracker</title>
 		<script type = "text/javascript" src="js/sniClient.js?v=1"></script>
+		<script type = "text/javascript" src="js/apClient.js?v=1"></script>
 		<script type = "text/javascript" src="js/autotracker.js?v=1"></script>
 		<script type = "text/javascript" src="js/logic.js?v=1"></script>
 		<script type = "text/javascript" src="js/rules.js?v=1"></script>
@@ -30,6 +31,7 @@
 				<label id="levelSearchResult" class="littleDisplayField">
 				</label>
 				<img id="imgOptionMenu" class="optionToggle" src="./images/options.png" title="Show/Hide options" onclick="toggleOptionMenu()"/>
+				<img id="imgArchipelago" class="archipelagoStatus" title="Archipelago connection"/>
 				<label id="labelSummaryChecks" class="summary">
 				  Checks:
 				  <div id="summaryChecks" class="summary"></div>
@@ -78,6 +80,30 @@
 					<br/>
 					<input type="checkbox" id="chkSpoilerBosses" name="chkSpoilerBosses" onchange="onInputElementChanged(this)" gameOption="Spoiler Bosses" type="boolean"/>
 					<label for="chkSpoilerBosses">Spoiler: Autotrack boss order<img class="infoIcon" title="Enabling this option will automatically read which boss is in which level in boss shuffle. Normally this info is only availlable by entering the boss room."></img></label>
+				</div>
+			    <h3>Archipelago settings:</h3>
+				<div id="archipleagoOptions" class="optionsGroup">
+					<label class="textField">
+					  Url<img class="infoIcon" title="Enter url of the archipelago multi world server."></img>:
+					  <input class="textField" name="inputAPUrl" id="inputAPUrl" value="archipelago.gg" onchange="onInputElementChanged(this)" gameOption="ArchipelagoUrl" type="string"/>
+					</label>
+					<label class="textField lastElementOfGroup">
+					  Port<img class="infoIcon" title="Enter port assigned to your romm on the archipelago multi wold server"></img>:
+					  <input class="textField" name="inputAPPort" id="inputAPPort" onchange="onInputElementChanged(this)" gameOption="ArchipelagoPort" type="number"/>
+					</label>
+					<br/>
+					<label class="textField">
+					  Slot Name<img class="infoIcon" title="Enter name of the slot you want to connect to."></img>:
+					  <input class="textField" name="inputAPName" id="inputAPName" onchange="onInputElementChanged(this)" gameOption="ArchipelagoSlotName" type="string"/>
+					</label>
+					<label class="textField lastElementOfGroup">
+					  Password:
+					  <input class="textField" name="inputAPPassword" id="inputAPPassword" onchange="onInputElementChanged(this)" gameOption="ArchipelagoPassword" type="password"/>
+					</label>
+				    <button type="button" class = "lastElementOfGroup" onclick="autotracker.connectToArchipelago()">Connect</button> 
+					<div id="archipelagoConnectionError" class="errorDisplay hidden">
+					  <label class="errorDisplay lastElementOfGroup"></label>
+					</div>
 				</div>
 				<h3>Game options<img class="infoIcon" title="These option should be identical with the game options you have choosen, when generating your seed. Not all of them can by read from the ROM and therefore have to be specified manually."></img>:</h3>
 				<div id="gameOptions" class="optionsGroup">
