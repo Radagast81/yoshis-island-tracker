@@ -348,6 +348,7 @@ class State {
 	  let goal = new WorldGoal(level, goalType);
 	  if(level.isBossLevel&&goalType == WorldGoalTypes.LevelClear) {
 		  goal.completed.addChangeListener((value) => level.isBossDefeated.set(value));
+		  level.isBossDefeated.addChangeListener((value) => this.calculateSummaries());
 	  }
 	  goal.completed.addChangeListener((value) => this.calculateSummaries());
 	  level.goals.set(goal.goalType, goal);

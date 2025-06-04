@@ -180,6 +180,9 @@ class Autotracker {
 		  let targetValue : boolean = goalVals.getDataAsBoolean(offset, 1<<i);
 		  if(targetValue) {
 		    goal.completed.set(targetValue);
+			if(goal.level.isBossLevel()&&goal.goalType == WorldGoalTypes.LevelClear) {
+				goal.level.isBossDefeated.set(targetValue); // Make sure BossDefeated is set when goal is already set by Archipelago
+			}
 		  }
 		}
 	  }
