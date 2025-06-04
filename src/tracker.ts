@@ -427,6 +427,7 @@ function setupWorldsInHTML() : void {
 		let worldImageFinish = Object.assign(document.createElement("img"), {
 		  id: "world-"+worldId+"-finish",
 		  className: "worldFinishedImage",
+		  title: world.name,
 		  width: 54,
 		  onclick: (e:Event) => toggleAllWorldGoalCompleted(world),
           ondragstart: (e:DragEvent)=> dragStartWorldLevel(e, world),
