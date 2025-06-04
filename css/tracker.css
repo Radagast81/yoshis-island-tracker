@@ -42,7 +42,7 @@ a {
    display: inline-block;
    margin: 0px;
 }
-.isNeeded {
+.isNeeded:not(.worldgoal-lenseNeeded) {
 	background-color: darkred;
 }
 .isNeeded.isCollected {
@@ -465,4 +465,7 @@ img.optionToggle {
 .errorDisplay {
 	color: red;
 	bold: true;
+}
+.isBossDefeated .worldIconImage {
+   content: url(../images/worlds/RIP.png);
 }

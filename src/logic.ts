@@ -116,14 +116,6 @@ var levelNames: Map<string, string> = new Map([
 
 var gameLevels: string[] = ["1-3", "1-7", "2-1", "2-3", "2-6", "2-7", "3-2", "3-7", "4-2", "4-6", "4-7", "5-1", "6-1", "6-7"];
 
-function removeItem<T>(arr: Array<T>, value: T): Array<T> { 
-  const index = arr.indexOf(value);
-  if (index > -1) {
-    arr.splice(index, 1);
-  }
-  return arr;
-}
-
 function calcWorldId(world: number, level: number) {
   return world + "-" + (level===9?"E":(level>9?"B":level));
 }
@@ -136,84 +128,13 @@ function getActiveRule(rules: (() => boolean)[]) : () => boolean {
    return rules[i];
 }
 
-class Observable<T> {
-  private value: T;
-  private changeListener: {(value: T): void}[] = [];
-  set(value:T): void {
-    let changed: boolean = (value !== this.value);
-	this.value = value;
-	if(changed)
-	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(value));
-  }
-  constructor(value:T) {
-    this.value =value;
-  }
-  get(): T {
-    return this.value;
-  }
-  addChangeListener(listener: {(value: T): void }): number {
-    return this.changeListener.push(listener) - 1;
-  }
-  
-  removeChangeListener(index: number) : void {
-    this.changeListener[index] = null;
-  }
-}
-
-class ObservableArray<T> {
-  private value: Array<T>;
-  private listener: {(value: Array<T>): void}[] = [];
-  set(value:Array<T>): void {
-	  this.value = value;
-	  this.listener.filter(listener=>listener).forEach(listener=>listener(value));
-  }
-  constructor(value: Array<T>) {
-    this.value =value;
-  }
-  get(): Array<T> {
-    return this.value;
-  }
-  addListener(listener: {(value: Array<T>): void }): number {
-    return this.listener.push(listener) - 1;
-  }
-  
-  removeListener(index: number) : void {
-    this.listener[index] = null;
-  }
-}
-
-class ObservableMap<S,T> {
-  private map: Map<S,T> = new Map<S,T>();
-  private changeListener: {(key: S, value: T): void }[] = [];
-  
-  set(key: S, value: T): void {
-    let changed = this.map.get(key) !== value;
-    this.map.set(key, value);
-	if(changed) 
-	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(key, value));
-  }
-  
-  get(key: S): T {
-    return this.map.get(key);
-  }
-  addChangeListener(listener: {(key: S, value: T): void }): number {
-    return this.changeListener.push(listener) - 1;
-  }
-  
-  removeChangeListener(index: number) : void {
-    this.changeListener[index] = null;
-  }
-  getAll():Map<S,T> {
-    return this.map;
-  }
-}
-
 class WorldLevel {
   readonly world: number;
   readonly level: number;
   readonly name: string;
   readonly locked: Observable<boolean> = new Observable<boolean>(false);
   readonly boss : Observable<Boss> = new Observable<Boss>(null);
+  readonly isBossDefeated: Observable<boolean> = new Observable<boolean>(false);
   goals: Map<WorldGoalTypes,WorldGoal> = new Map<WorldGoalTypes,WorldGoal>();
   
   constructor(world: number, level: number) {
@@ -425,6 +346,9 @@ class State {
   
   private createGoal(level: WorldLevel, goalType: WorldGoalTypes) {
 	  let goal = new WorldGoal(level, goalType);
+	  if(level.isBossLevel&&goalType == WorldGoalTypes.LevelClear) {
+		  goal.completed.addChangeListener((value) => level.isBossDefeated.set(value));
+	  }
 	  goal.completed.addChangeListener((value) => this.calculateSummaries());
 	  level.goals.set(goal.goalType, goal);
 	  this.worldGoals.set(goal.getId(), goal);
@@ -497,7 +421,7 @@ class State {
 	      checksCompleted++;
 	    if(goal.goalType===WorldGoalTypes.LevelClear&&goal.level.isBossLevel()&&!goal.level.isBowserLevel()) {
 	  	  bossesTotal++;
-	  	  if(goal.completed.get())
+	  	  if(goal.level.isBossDefeated.get())
 	  	    bossesCompleted++;
 	    }
 	  }

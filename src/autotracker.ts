@@ -328,7 +328,9 @@ class Autotracker {
   private notifyNewArchipelagoLocationsChecked(locations: Array<string>): void {
 	  this.state.worldGoals.forEach((goal: WorldGoal, key: string) => {
 			  if(locations.indexOf(getArchipelagoLocationName(goal))>-1) {
+				   let isBossDefeated: boolean = goal.level.isBossDefeated.get();
 				   goal.completed.set(true);
+				   goal.level.isBossDefeated.set(isBossDefeated); // Make sure Archipelago doesn't change defeated-flag
 			  }
 	  });
   }

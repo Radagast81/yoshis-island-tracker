@@ -20,21 +20,6 @@ function resetCollectableList() : void {
   saveOrderToLocalStorage(collectableList, collectableListStorage);
   setupCollectablesInHTML();
 }
-function moveElement<Type>(array: Type[], fromIndex: number, toIndex: number): Type[] {
-    let startEntry = array[fromIndex];
-    if(toIndex>fromIndex) {
-      for(let i = fromIndex; i < toIndex; i++) {
-        array[i] = array[i+1];
-      }
-      array[toIndex] = startEntry;
-    } else if(toIndex<fromIndex) {
-      for(let i = fromIndex; i > toIndex; i--) {
-        array[i] = array[i-1];
-      }
-      array[toIndex] = startEntry;
-    }
-	return array;
-}
 function loadOrderFromLocalStorage<Type>(array: Type[], key: string): Type[] {
   let order = window.localStorage.getItem(key)?.split(",");
   if(order) {
@@ -81,6 +66,9 @@ function checkForConsumable(goal: WorldGoal, target: CollectableTypes, difficult
 function updateLevelState(level: WorldLevel) {
   let isLevelFinished: boolean = true;
   let isGoalOpen: boolean = false;
+  if(!level.isBossDefeated.get()&&level.isBossLevel()){
+	  isLevelFinished = false;
+  }
   for(let [goalId, goal] of level.goals.entries()) {
     if(goal.goalType==WorldGoalTypes.Game) {
 	  if(goal.level.level == 10&&!state.gameOptions.get(GameOptions.MinigameBonus))
@@ -94,6 +82,7 @@ function updateLevelState(level: WorldLevel) {
 	    isGoalOpen = true;
 	}
   }
+  level.htmlElement.classList.toggle("isBossDefeated", level.isBossDefeated.get());
   level.htmlElement.classList.toggle("isFinished", isLevelFinished);
   level.htmlElement.classList.toggle("isLocked", level.locked.get());
   level.htmlElement.classList.toggle("noOpenGoals", !isLevelFinished&&!isGoalOpen);
