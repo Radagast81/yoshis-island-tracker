@@ -82,7 +82,7 @@ function updateLevelState(level: WorldLevel) {
 	    isGoalOpen = true;
 	}
   }
-  level.htmlElement.classList.toggle("isBossDefeated", level.isBossDefeated.get());
+  level.htmlElement.classList.toggle("isBossDefeated", level.isBossDefeated.get()&&level.isBossLevel());
   level.htmlElement.classList.toggle("isFinished", isLevelFinished);
   level.htmlElement.classList.toggle("isLocked", level.locked.get());
   level.htmlElement.classList.toggle("noOpenGoals", !isLevelFinished&&!isGoalOpen);
