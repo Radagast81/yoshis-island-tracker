@@ -1,5 +1,3 @@
-
-
 class Observable<T> {
   private value: T;
   private changeListener: {(value: T): void}[] = [];
@@ -25,14 +23,18 @@ class Observable<T> {
 }
 
 class ObservableArray<T> {
+  private readonly onlyNoticeOnSizeChanged: boolean;
   private value: Array<T>;
   private listener: {(value: Array<T>): void}[] = [];
   set(value:Array<T>): void {
+      let changed: boolean = (value.length !== this.value.length);
 	  this.value = value;
-	  this.listener.filter(listener=>listener).forEach(listener=>listener(value));
+	  if(!this.onlyNoticeOnSizeChanged || changed)
+	    this.listener.filter(listener=>listener).forEach(listener=>listener(value));
   }
-  constructor(value: Array<T>) {
+  constructor(value: Array<T>, onlyNoticeOnSizeChanged: boolean = false) {
     this.value =value;
+	this.onlyNoticeOnSizeChanged = onlyNoticeOnSizeChanged;
   }
   get(): Array<T> {
     return this.value;
@@ -55,6 +57,12 @@ class ObservableMap<S,T> {
     this.map.set(key, value);
 	if(changed) 
 	  this.changeListener.filter(listener=>listener).forEach(listener=>listener(key, value));
+  }
+  
+  setAll(map: Map<S,T>): void {
+	map.forEach((value: T, key: S) => {
+	  this.set(key, value);
+    });
   }
   
   get(key: S): T {
@@ -94,4 +102,31 @@ function moveElement<Type>(array: Type[], fromIndex: number, toIndex: number): T
       array[toIndex] = startEntry;
     }
 	return array;
+}
+function decodeItemFlags(flags:number): string {
+	let presentFlags: Array<string> = new Array<string>();
+	if(flags&ItemFlags.Progression) {
+		presentFlags.push("Progression");
+	}
+	if(flags&ItemFlags.Useful) {
+		presentFlags.push("Useful");
+	}
+	if(flags&ItemFlags.Trap) {
+		presentFlags.push("Trap");
+	}
+	if(presentFlags.length < 1){
+		presentFlags.push("Filler");
+	}
+	return presentFlags.toString();
+}
+
+class HintForLocation {
+	location_name: string;
+	receivingPlayer: string;
+	item_name: number;
+	item_flags: number;
+	
+	getItemFlagsAsString(): string {
+		return decodeItemFlags(this.item_flags);
+	}
 }

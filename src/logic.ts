@@ -193,6 +193,7 @@ class WorldLevel {
 class WorldGoal {
   readonly level: WorldLevel;
   readonly goalType: WorldGoalTypes;
+  readonly hint: Observable<HintForLocation> = new Observable<HintForLocation>(null);
   rules: (() => boolean)[];
   readonly completed: Observable<boolean> = new Observable<boolean>(false);
   

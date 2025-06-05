@@ -69,11 +69,12 @@ class Autotracker {
     this.state = state;
 	this.lastState = lastState;
     this.sniClient = new SNIClient("ws://localhost:23074");
-    this.apClient = new APClient(this.state.gameOptions);
+    this.apClient = new APClient("Yoshi's Island", this.state.gameOptions);
 	this.apClient.checkedLocations.addListener(this.notifyNewArchipelagoLocationsChecked);
 	this.apClient.itemsReceived.addListener(this.notifyArchipelagoItemList);
 	this.apClient.slotData.addChangeListener((data)=>this.notifyArchipelagoSlotDataRecieved(this, data));
 	this.apClient.allAvaillableLocations.addListener(this.notifyAllArchipelagoKnownLocations);
+	this.apClient.hintsForLocations.addListener(this.notifyNewArchipelagoHints);
 	
     this.sniClient.addDataSource("Title", 0x007FC0, 0X0015);
     this.sniClient.addDataSource("Options", 0x06FC80, 0X0040);
@@ -335,6 +336,15 @@ class Autotracker {
 				   goal.completed.set(true);
 				   goal.level.isBossDefeated.set(isBossDefeated); // Make sure Archipelago doesn't change defeated-flag
 			  }
+	  });
+  }
+  private notifyNewArchipelagoHints(apHints: Array<HintForLocation>): void {
+	  let hintMap: Map<string, HintForLocation> = new Map(apHints.map(obj => [obj.location_name, obj]));
+	  this.state.worldGoals.forEach((goal: WorldGoal, key: string) => {
+		  let hint: HintForLocation = hintMap.get(getArchipelagoLocationName(goal));
+		  if(!goal.hint.get()&&hint) {
+			 goal.hint.set(hint);
+		  }
 	  });
   }
   private notifyArchipelagoSlotDataRecieved(tracker: Autotracker, slotData: any): void {

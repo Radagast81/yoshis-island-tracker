@@ -469,3 +469,29 @@ img.optionToggle {
 .isBossDefeated .worldIconImage {
    content: url(../images/worlds/RIP.png);
 }
+.hintItem {
+	color: Turquoise;
+	bold: true;
+}
+.hintItem.trap {
+	color: Orange;
+}
+.hintItem.progression {
+	color: MediumPurple;
+}
+.hintItem.useful {
+	color: SteelBlue;
+}
+.hintPlayer {
+	color: PapayaWhip;
+	bold: true;
+}
+.worldGoals .trap {
+	background-color: Orange;
+}
+.worldGoals .progression {
+	background-color: MediumPurple;
+}
+.worldGoals .useful {
+	background-color: SteelBlue;
+}

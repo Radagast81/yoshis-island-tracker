@@ -165,6 +165,7 @@ function updateWorldGoalState(goal: WorldGoal) {
 	}
   }
   updateLevelState(goal.level);
+  notifyHintForGoalChanged(goal);
 }
 
 function performOnAllCollectables(func: (collectable: Collectable) => void) {
@@ -491,6 +492,7 @@ function setupWorldsInHTML() : void {
 				onclick: (e:Event) => toggleWorldGoalCompleted(goal)
 			  });
 			  goal.completed.addChangeListener((value)=> updateWorldGoalState(goal));
+			  goal.hint.addChangeListener((value)=> notifyHintForGoalChanged(goal));
 			  updateWorldGoalState(goal);
 			  goalsCell.append(goal.htmlImage, goal.htmlImageSubstitute,goal.htmlImageLenseNeeded,goal.htmlImageBeatableWithHarderDifficulty);
 			  goalsCol.appendChild(goalsCell);
@@ -627,6 +629,7 @@ function setGoalRequirementsHighlights(goal: WorldGoal) : void {
   }
   
   setInfoBoxText(text.displayText);
+  setHintForGoal(goal);
   if(/has(Eggs)?\s*\(/g.test(text.combinedFuncText)) {
     isGoalRequirementsHighlighted = true;
   
@@ -706,8 +709,23 @@ function setInfoBoxText(s: string) {
   if(infoBox)
     infoBox.textContent = s;
 }
+function setHintForGoal(goal: WorldGoal) {
+	let hint = goal?.hint.get();
+	let itemNameElement = document.getElementById("infoLocationHintItemName");
+	let receivingPlayerElement = document.getElementById("infoLocationHintReceivingPlayer");
+	itemNameElement.textContent = hint?.item_name+"("+hint?.getItemFlagsAsString()+")";
+	receivingPlayerElement.textContent = hint?.receivingPlayer;
+	
+	document.getElementById("infoLocationHint").classList.toggle("hidden", !hint);
+	document.getElementById("infoLocationHintText").classList.toggle("hidden", !hint);
+	
+	itemNameElement.classList.toggle("progression", hint&&(hint.item_flags&ItemFlags.Progression)!=0);
+	itemNameElement.classList.toggle("useful", hint&&(hint.item_flags&ItemFlags.Useful)!=0);
+	itemNameElement.classList.toggle("trap", hint&&(hint.item_flags&ItemFlags.Trap)!=0);
+}
 function resetLogicInfobox() {
 	 setInfoBoxText("<Hover mouse over goal (e.g. world 5-3 red coin) to see what's logically needed to achieve that goal.>");
+	 setHintForGoal(null);
 }
 
 var hoverTimeoutId = 0;
@@ -951,6 +969,12 @@ function notifyWorldLevelBossChanged(world: WorldLevel, updateGoals: boolean=tru
 	if(updateGoals)
 	  updateAllWorldGoals();
   }
+}
+function notifyHintForGoalChanged(goal: WorldGoal) {
+	let hint = goal.hint.get();
+	goal.htmlImage.classList.toggle("progression", !goal.completed.get()&&hint&&(hint.item_flags&ItemFlags.Progression)!=0);
+	goal.htmlImage.classList.toggle("useful", !goal.completed.get()&&hint&&(hint.item_flags&ItemFlags.Useful)!=0);
+	goal.htmlImage.classList.toggle("trap", !goal.completed.get()&&hint&&(hint.item_flags&ItemFlags.Trap)!=0);
 }
 function assignBoss2Level(bossType: BossTypes) {
   contextMenu4Level?.setBossByType(bossType);

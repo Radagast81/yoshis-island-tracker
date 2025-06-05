@@ -1,4 +1,37 @@
+class APGameData {
+  readonly gameName: string;
+  readonly locationAPIdToNameMap: Map<number, string> = new Map<number, string>();
+  readonly collectablesAPIdToNameMap: Map<number, string> = new Map<number, string>();
+  
+  constructor(gameName: string) {
+	  this.gameName = gameName;
+  }
+}
+class APPlayer {
+	alias: string;
+	name: string;
+	team: number;
+	slot: number;
+	game: string;
+	getPlayerName(): string {
+		return this.alias+(this.alias !== this.name?"("+this.name+")":"");
+	}
+}
+class APHintReply {
+	entrance: string;
+	finding_player: number;
+	found: boolean;
+	item: number;
+	item_flags: number;
+	location: number;
+	receiving_player: number;
+	status: number;
+}
 class APClient {
+  private gameName: string;
+  private APTeam: number;
+  private APSlot: number;
+  readonly APPlayers: Map<number, APPlayer> = new Map<number, APPlayer>();
   readonly gameOptions: ObservableMap<GameOptions, string|number|boolean>;
   readonly isConnected: Observable<boolean> = new Observable(false);
   readonly checkedLocations: ObservableArray<string> = new ObservableArray([]);
@@ -6,10 +39,10 @@ class APClient {
   readonly itemsReceived: ObservableArray<string> = new ObservableArray([]);
   readonly slotData: Observable<any> = new Observable<any>(null);
   readonly connectionStatus: Observable<string> = new Observable(null);
+  readonly hintsForLocations: ObservableArray<HintForLocation> = new ObservableArray([], true);
   private webSocket: WebSocket;
   
-  private readonly locationAPIdToNameMap: Map<number, string> = new Map<number, string>();
-  private readonly collectablesAPIdToNameMap: Map<number, string> = new Map<number, string>();
+  readonly gameData: Map<string, APGameData> = new Map<string, APGameData>();
   private uuid = crypto.randomUUID();
   
   notifyGameOptionChanged(gameOption: GameOptions, value: string|number|boolean) {
@@ -22,9 +55,14 @@ class APClient {
 	  }
   }
   
-  constructor(gameOptions: ObservableMap<GameOptions, string|number|boolean>) {
+  constructor(gameName: string, gameOptions: ObservableMap<GameOptions, string|number|boolean>) {
 	  this.gameOptions = gameOptions;
+	  this.gameName = gameName;
   }
+
+  getKeyForReadHintCommand(): string {
+	return "_read_hints_"+this.APTeam+"_"+this.APSlot;
+  } 
   
   connect(): void {
     if (this.webSocket) {
@@ -59,53 +97,103 @@ class APClient {
   
   private onConnect(event: Event) : void {
     this.connectionStatus.set("Connected, requesting devices list");
-    this.webSocket.send(JSON.stringify([{
-        cmd: "GetDataPackage",
-		games: ["Yoshi's Island"]
-    }])); 
-    this.webSocket.send(JSON.stringify([{
-        cmd: "Connect",
-		game: "Yoshi's Island",
-		version: {"major":0,"minor":6,"build":1,"class":"Version"},
-		name: <string> this.gameOptions.get(GameOptions.ArchipelagoSlotName),
-		password: <string> this.gameOptions.get(GameOptions.ArchipelagoPassword),
-		tags: ["Tracker","NoText","PopTracker","IgnoreGame"],
-		items_handling: 3,
-		uuid: this.uuid
-    }])); 
+  }
+  
+  private onHintsReply(apHints: Array<APHintReply>) : void {
+	  if(!apHints)
+		  return;
+	  let locHints: Array<HintForLocation> = new Array<HintForLocation>();
+	  for(let apHint of apHints) {
+		  if(apHint.finding_player === this.APSlot) {
+			  // Hint for Players Location
+			  let receiving_player: APPlayer = this.APPlayers.get(apHint.receiving_player);
+			  locHints.push(Object.assign(new HintForLocation(), {
+					location_name: this.gameData.get(this.gameName).locationAPIdToNameMap.get(apHint.location),
+					receivingPlayer: receiving_player.getPlayerName(),
+					item_name: this.gameData.get(receiving_player.game).collectablesAPIdToNameMap.get(apHint.item),
+				    item_flags: apHint.item_flags}));
+		  }
+	  }
+	  this.hintsForLocations.set(locHints);
+	  //console.log("onHintsReply");
+	  //console.log(locHints);
   }
   
   private onMessage(event: MessageEvent) {
+	let myGameData: APGameData = this.gameData.get(this.gameName);
 	this.isConnected.set(true);
 	for(let msg of JSON.parse(event.data)) {
-		  console.log(msg);
+	  //console.log(msg);
 	  if(msg.cmd === "Connected" || msg.cmd === "RoomUpdate")  {
-		  this.checkedLocations.set(msg.checked_locations.map((id:number)=>this.locationAPIdToNameMap.get(id)));
+		  this.checkedLocations.set(msg.checked_locations.map((id:number)=>myGameData.locationAPIdToNameMap.get(id)));
 		  if(msg.cmd === "Connected") {
 			  this.slotData.set(msg.slot_data);
 			  let allLocations : Array<number> = msg.checked_locations.concat(msg.missing_locations);
-		      this.allAvaillableLocations.set(allLocations.map((id:number)=>this.locationAPIdToNameMap.get(id)));
+			  this.APTeam = msg.team;
+			  this.APSlot = msg.slot;
+			  for(let player of msg.players) {
+				  this.APPlayers.set(player.slot, 
+				    Object.assign(new APPlayer(), {
+						alias: player.alias,
+						name: player.name,
+						team: player.team,
+						slot: player.slot,
+						game: msg.slot_info[player.slot].game
+					}));
+			  }
+			  this.webSocket.send(JSON.stringify([{
+					cmd: "Get",
+					keys: [this.getKeyForReadHintCommand()]
+			  }])); 
+			  this.webSocket.send(JSON.stringify([{
+					cmd: "SetNotify",
+					keys: [this.getKeyForReadHintCommand()]
+			  }])); 
+		      this.allAvaillableLocations.set(allLocations.map((id:number)=>myGameData.locationAPIdToNameMap.get(id)));
 		  }
 	  } else if (msg.cmd === "ReceivedItems")  {
 		  if(msg.index === 0) {
-		    this.itemsReceived.set(msg.items.map((item:any)=>this.collectablesAPIdToNameMap.get(item.item)));
+		    this.itemsReceived.set(msg.items.map((item:any)=>myGameData.collectablesAPIdToNameMap.get(item.item)));
 		  } else {
-			this.itemsReceived.set(this.itemsReceived.get().concat(msg.items.map((item:any)=>this.collectablesAPIdToNameMap.get(item.item))));
+			this.itemsReceived.set(this.itemsReceived.get().concat(msg.items.map((item:any)=>myGameData.collectablesAPIdToNameMap.get(item.item))));
 		  }
 	  } else if (msg.cmd === "DataPackage")  { 
-	      let itemNameToId = msg.data.games["Yoshi's Island"].item_name_to_id;
-		  let locationNameToId = msg.data.games["Yoshi's Island"].location_name_to_id;
+		  for(let gameName of Object.keys(msg.data.games)) {
+			  let gameData: APGameData = new APGameData(gameName);
+	          let itemNameToId = msg.data.games[gameName].item_name_to_id;
+		      let locationNameToId = msg.data.games[gameName].location_name_to_id;
 		  
-		  for(let name of Object.keys(itemNameToId)) {
-			  this.collectablesAPIdToNameMap.set(itemNameToId[name], name);
+			  for(let name of Object.keys(itemNameToId)) {
+				  gameData.collectablesAPIdToNameMap.set(itemNameToId[name], name);
+			  }
+			  for(let name of Object.keys(locationNameToId)) {
+				  gameData.locationAPIdToNameMap.set(locationNameToId[name], name);
+			  }
+			  this.gameData.set(gameName, gameData);
 		  }
-		  for(let name of Object.keys(locationNameToId)) {
-			  this.locationAPIdToNameMap.set(locationNameToId[name], name);
-		  }
+			this.webSocket.send(JSON.stringify([{
+				cmd: "Connect",
+				game: this.gameName,
+				version: {"major":0,"minor":6,"build":1,"class":"Version"},
+				name: <string> this.gameOptions.get(GameOptions.ArchipelagoSlotName),
+				password: <string> this.gameOptions.get(GameOptions.ArchipelagoPassword),
+				tags: ["Tracker","NoText","PopTracker","IgnoreGame"],
+				items_handling: 3,
+				uuid: this.uuid
+			}])); 
+	  } else if (msg.cmd === "RoomInfo")  { 
+			this.webSocket.send(JSON.stringify([{
+				cmd: "GetDataPackage",
+				games: msg.games
+			}])); 
 	  } else if (msg.cmd === "ConnectionRefused")  {
           this.connectionStatus.set("Error: "+msg.errors[0]);		
 		  this.cleanup();
-	  } 
+	  } else if (msg.cmd === "Retrieved" && msg.keys[this.getKeyForReadHintCommand()]) {
+		  this.onHintsReply(msg.keys[this.getKeyForReadHintCommand()]);
+	  } else if (msg.cmd === "SetReply" && msg.key === this.getKeyForReadHintCommand()) {
+		  this.onHintsReply(msg.value);
+	  }
 	}
   }
   

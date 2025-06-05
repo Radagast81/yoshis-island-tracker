@@ -83,6 +83,12 @@ const enum GameOptions {
   ArchipelagoSlotName = "ArchipelagoSlotName",
   ArchipelagoPassword = "ArchipelagoPassword"
 }
+const enum ItemFlags {
+	Progression = 0x1,
+	Useful = 0x2,
+	Trap = 0x4,
+	Filler = 0x0
+}
 
 type EvaluationState = {
   collectables: Map<CollectableTypes, boolean|number>;
